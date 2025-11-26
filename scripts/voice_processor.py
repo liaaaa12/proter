@@ -115,13 +115,13 @@ def verify_voice(test_audio_path, enrolled_features):
     similarity = compare_voices(enrolled_features, test_features)
     
     # Threshold for authentication (80%)
-    is_match = similarity >= 80.0
+    is_match = bool(similarity >= 95.0)
     
     return {
         'success': True,
         'similarity': round(similarity, 2),
         'is_match': is_match,
-        'threshold': 80.0
+        'threshold': 95.0
     }
 
 def main():
