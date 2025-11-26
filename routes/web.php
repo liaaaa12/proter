@@ -36,6 +36,11 @@ Route::middleware('auth')->group(function () {
         return view('dashboard');
     })->name('dashboard');
     
+    // Budgeting
+    Route::get('/budgeting', function () {
+        return view('budget');
+    })->name('budgeting');
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
@@ -45,7 +50,3 @@ Route::middleware('auth')->group(function () {
 Route::get('/', function () {
     return redirect()->route('login');
 });
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');

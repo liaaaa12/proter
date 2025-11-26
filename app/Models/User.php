@@ -45,7 +45,15 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'voice_enrolled_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    
+    public function hasVoiceEnrolled(): bool
+    {
+        return !empty($this->voice_path) && 
+               !empty($this->voice_embedding) && 
+               !is_null($this->voice_enrolled_at);
     }
 }

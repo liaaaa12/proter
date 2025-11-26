@@ -130,10 +130,19 @@ class AuthController extends Controller
                 ->with('mode', 'login');
         }
 
+        $loginField = $request->input('phone');
+
+        $user = User::where('phone', $loginField)
+                ->orWhere('name', $loginField)
+                ->first();
+
+        $fieldType = $user->phone === $loginField ? 'phone' : 'name';
+
         $credentials = [
-            'phone' => $request->phone,
+            $fieldType => $loginField,
             'password' => $request->password,
         ];
+        
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
@@ -172,7 +181,11 @@ class AuthController extends Controller
 
         try {
             // Find user by phone
-            $user = User::where('phone', $request->phone)->first();
+           $loginField = $request->input('phone');
+
+            $user = User::where('phone', $loginField)
+            ->orWhere('name', $loginField)
+            ->first();
 
             if (!$user) {
                 return back()

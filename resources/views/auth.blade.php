@@ -559,7 +559,7 @@
                         <button type="button" class="voice-btn voice-btn-secondary" id="voice-login-reset-btn" onclick="VoiceLogin.resetRecording()" style="display: none;">🔄 Reset</button>
                     </div>
                 </div>
-                <input type="hidden" name="voice_audio" id="voice-login-input">
+                <input type="hidden" name="voice_audio_base64" id="voice-login-input">
                 <button type="submit" class="submit-btn" id="voice-login-submit-btn" disabled>Login dengan Suara</button>
             </form>
         </div>
