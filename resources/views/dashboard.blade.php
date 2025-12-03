@@ -44,35 +44,46 @@
             height: 70px;
             border-radius: 44px;
             margin-bottom: 40px;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 5px;
         }
+        /* nanti kalau pakai img:
+           .logo img { width:100%; height:100%; object-fit:cover; border-radius:44px; } */
 
         .menu-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 35px;
+            gap: 6px;
+            margin-bottom: 26px;
             cursor: pointer;
             transition: transform 0.2s;
+            text-decoration: none;
         }
 
         .menu-item:hover {
             transform: scale(1.05);
         }
 
-        .menu-item svg {
-            width: 35px;
-            height: 35px;
+        .menu-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: #E3F5FF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
         }
 
         .menu-item span {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 750;
             text-align: center;
+            color: #000;
         }
 
         /* Main Content */
@@ -155,6 +166,7 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            font-size: 30px;
         }
 
         .card-content h3 {
@@ -245,13 +257,36 @@
         }
 
         .pie-chart {
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
-            background: conic-gradient(#00A311 0% 60%, #ED6363 60% 100%);
             position: relative;
             margin-bottom: 20px;
         }
+
+
+        /* label persentase di tengah warna masing-masing */
+        .chart-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 26px;
+            font-weight: 800;
+            transform: translate(-50%, -50%) rotate(var(--angle))
+                    translate(70px) rotate(calc(-1 * var(--angle)));
+            white-space: nowrap;
+        }
+
+        /* warna teks ikut warna slice */
+        .chart-label-income {
+            color: #00A311;   /* hijau pemasukan */
+        }
+
+        .chart-label-expense {
+            color: #ED6363;   /* merah pengeluaran */
+        }
+
+
 
         .chart-legend {
             display: flex;
@@ -284,6 +319,20 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .transaction-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .transaction-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .transaction-list::-webkit-scrollbar-thumb {
+            background: #C4C4C4;
+            border-radius: 10px;
         }
 
         .transaction-item {
@@ -339,11 +388,6 @@
             .logo {
                 width: 50px;
                 height: 50px;
-            }
-
-            .menu-item svg {
-                width: 28px;
-                height: 28px;
             }
 
             .menu-item span {
@@ -708,6 +752,40 @@
     </style>
 </head>
 <body>
+
+@php
+    // kalau controller sudah mengirim $transactions, ini dipakai
+    // kalau belum, pakai dummy data bawaanmu
+    $transactions = $transactions ?? collect([
+        ['name' => 'Gaji',     'date' => '10/10/2025', 'amount' => 1000000],
+        ['name' => 'Shopping', 'date' => '5/10/2025',  'amount' => -200000],
+        ['name' => 'Makan',    'date' => '5/10/2025',  'amount' => -50000],
+        ['name' => 'Sedekah',  'date' => '1/10/2025',  'amount' => -150000],
+    ]);
+
+    $totalIncome  = $transactions->where('amount', '>', 0)->sum('amount');
+    $totalExpense = abs($transactions->where('amount', '<', 0)->sum('amount'));
+
+    $total = $totalIncome + $totalExpense;
+
+    $incomePerc  = $total ? round($totalIncome  / $total * 100) : 0;
+    $expensePerc = 100 - $incomePerc;
+
+    // Pindahkan awal lingkaran ke atas (−90°), 
+    $incomeAngle  = -90 + ($incomePerc * 3.6 / 2);
+    $expenseAngle = -90 + ($incomePerc * 3.6) + ($expensePerc * 3.6 / 2);
+
+@endphp
+
+<div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo"></div>
+
+        <div class="menu-item">
+            <div class="menu-item-icon">🏠</div>
+            <span>Dashboard</span>
+        </div>
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -722,20 +800,31 @@
                 <span>Dashboard</span>
             </div>
 
-            <a href="{{ route('budgeting') }}" class="menu-item" >
-                <svg viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M45.9481 24.5292C45.7971 24.6842 45.6862 24.8738 45.6252 25.0814C45.5641 25.2891 45.5547 25.5085 45.5977 25.7206C45.8103 26.7839 45.9167 27.877 45.9167 29C45.9164 32.4104 44.8854 35.7411 42.9588 38.5553C41.0321 41.3694 38.2999 43.5355 35.1206 44.7694C31.9412 46.0033 28.4631 46.2474 25.1425 45.4697C21.8219 44.6921 18.8139 42.9289 16.5131 40.4115C16.399 40.2836 16.2603 40.1798 16.1054 40.1065C15.9505 40.0331 15.7824 39.9916 15.6111 39.9844C15.4398 39.9771 15.2688 40.0044 15.1083 40.0645C14.9477 40.1246 14.8009 40.2163 14.6764 40.3342C14.4649 40.539 14.3402 40.8172 14.3281 41.1114C14.316 41.4055 14.4173 41.6931 14.6112 41.9147C17.4501 45.0802 21.2535 47.2216 25.4324 48.0072C29.6113 48.7928 33.9327 48.1787 37.7274 46.2602C41.5221 44.3417 44.5785 41.2256 46.4233 37.3945C48.2681 33.5634 48.7984 29.231 47.9322 25.0681C47.7413 24.1425 46.6151 23.8646 45.9481 24.5316M42.9901 17.3057C43.2056 17.097 43.3308 16.8122 43.339 16.5123C43.3471 16.2124 43.2375 15.9212 43.0336 15.7011C40.123 12.6268 36.2838 10.5929 32.1055 9.91156C27.9271 9.23027 23.6407 9.93929 19.9043 11.9297C16.1679 13.9202 13.1881 17.0821 11.4225 20.9298C9.65687 24.7776 9.20303 29.0985 10.1307 33.2292C10.3337 34.1427 11.4502 34.4109 12.1123 33.7487C12.4265 33.4346 12.5473 32.9754 12.4555 32.5404C11.6852 28.9451 12.1073 25.1966 13.6578 21.8626C15.2084 18.5286 17.803 15.7906 21.0488 14.0631C24.2947 12.3355 28.015 11.7126 31.6465 12.2885C35.2781 12.8645 38.6231 14.6079 41.1752 17.255C41.2908 17.3775 41.4294 17.476 41.5831 17.5448C41.7368 17.6137 41.9025 17.6516 42.0709 17.6563C42.2392 17.661 42.4069 17.6325 42.5642 17.5723C42.7215 17.5122 42.8678 17.4216 42.9901 17.3057Z" fill="black"/>
-                </svg>
-                <span>Budgeting</span>
-            </a>
+        <a href="{{ route('budgeting') }}" class="menu-item">
+            <div class="menu-item-icon">💰</div>
+            <span>Budgeting</span>
+        </a>
 
-            <div class="menu-item">
-                <svg viewBox="0 0 63 63" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M21 42.2438C21.246 42.4899 21.3842 42.8237 21.3842 43.1717C21.3842 43.5197 21.246 43.8535 21 44.0996L18.375 46.7246C18.2539 46.85 18.1091 46.95 17.9489 47.0188C17.7888 47.0876 17.6166 47.1238 17.4423 47.1253C17.268 47.1268 17.0952 47.0936 16.9339 47.0276C16.7726 46.9616 16.626 46.8641 16.5028 46.7409C16.3796 46.6177 16.2821 46.4711 16.2161 46.3098C16.1501 46.1485 16.1169 45.9757 16.1184 45.8014C16.12 45.6272 16.1562 45.4549 16.2249 45.2948C16.2937 45.1347 16.3937 44.9898 16.5191 44.8688L19.1441 42.2438C19.3902 41.9977 19.724 41.8595 20.072 41.8595C20.42 41.8595 20.7538 41.9977 21 42.2438Z" fill="black"/>
-                </svg>
-                <span>Goals</span>
-            </div>
+        <div class="menu-item">
+            <div class="menu-item-icon">🎯</div>
+            <span>Goals</span>
+        </div>
 
+        <div class="menu-item">
+            <div class="menu-item-icon">📊</div>
+            <span>Laporan</span>
+        </div>
+
+        <div class="menu-item" style="margin-top: auto; margin-bottom: 20px;">
+            <form method="POST" action="{{ route('logout') }}" style="display: contents;">
+                @csrf
+                <button type="submit" style="background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0;">
+                    <div class="menu-item-icon" style="background:#FFE4E4;">🚪</div>
+                    <span style="color: #F53003; font-size: 12px; font-weight: 600;">Logout</span>
+                </button>
+            </form>
+        </div>
+    </div>
             <a href="{{ route('laporan') }}" class="menu-item">
                 <svg viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21.5 21.5417H22.95V19.975C23.8833 19.8444 24.6753 19.4691 25.326 18.849C25.9767 18.2288 26.3013 17.4292 26.3 16.45C26.3 15.6014 25.9667 14.8912 25.3 14.3193C24.6333 13.7475 23.8667 13.2827 23 12.925V9.30208C23.3333 9.4 23.6087 9.56319 23.826 9.79167C24.0433 10.0201 24.2013 10.2976 24.3 10.624L26.1 9.88958C25.8667 9.20417 25.4667 8.65779 24.9 8.25046C24.3333 7.84313 23.7 7.57353 23 7.44167V5.875H21.5V7.39271C20.5667 7.49062 19.7753 7.8255 19.126 8.39733C18.4767 8.96917 18.1513 9.72769 18.15 10.6729C18.15 11.5542 18.492 12.2885 19.176 12.876C19.86 13.4635 20.6347 13.9368 21.5 14.2958V18.1635C20.9667 18.0003 20.5167 17.7229 20.15 17.3313C19.7833 16.9396 19.5333 16.4826 19.4 15.9604L17.65 16.6948C17.9167 17.6087 18.3833 18.3594 19.05 18.9469C19.7167 19.5344 20.5333 19.8934 21.5 20.024V21.5417Z" fill="black"/>
@@ -764,22 +853,33 @@
         
         
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Header -->
-            <div class="header">
-                <div class="header-text">
-                    <h1>Halo, {{ Auth::user()->name }}!</h1>
-                    <p>Let's track your spending today</p>
-                </div>
-                <button class="voice-btn">
-                    <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
-                        <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
-                    </svg>
-                    Tekan Untuk Bersuara
-                </button>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-text">
+                <h1>Halo, {{ Auth::check() ? Auth::user()->name : 'Budi' }}!</h1>
+                <p>Mari lihat pengeluaran Anda hari ini</p>
             </div>
+            <button class="voice-btn">
+                <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+                    <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+                </svg>
+                Tekan Untuk Bersuara
+            </button>
+        </div>
 
+        <!-- Cards Grid -->
+        <div class="cards-grid">
+            <div class="card balance">
+                <div class="card-icon">💳</div>
+                <div class="card-content">
+                    <h3>Saldo saat ini</h3>
+                    <div class="amount">
+                        Rp{{ number_format($totalIncome - $totalExpense, 0, ',', '.') }}
+                    </div>
+                </div>
+            </div>
             <!-- Cards Grid -->
             <div class="cards-grid">
                 <div class="card balance">
@@ -794,17 +894,28 @@
                     </div>
                 </div>
 
-                <div class="card income">
-                    <div class="card-icon">
-                        <svg width="30" height="30" viewBox="0 0 39 35" fill="none">
-                            <path d="M10.2632 17.9134V10.105C10.2632 9.33946 10.5628 8.68906 11.1622 8.15381C11.7616 7.61855 12.4882 7.35031 13.3421 7.34908C14.196 7.34786 14.9233 7.6161 15.524 8.15381C16.1248 8.69151 16.4238 9.3419 16.421 10.105V17.9134C16.421 18.6789 16.122 19.3299 15.524 19.8664C14.9261 20.4029 14.1987 20.6705 13.3421 20.6693C12.4855 20.6681 11.7588 20.4004 11.1622 19.8664C10.5656 19.3324 10.2659 18.6814 10.2632 17.9134Z" fill="#00670B"/>
-                        </svg>
+            <div class="card target">
+                <div class="card-icon">🎯</div>
+                <div class="card-content">
+                    <h3>Target Dana Darurat</h3>
+                    <div class="amount" style="color: #2C3E50; font-size: 24px; font-weight: 400;">
+                        50%
                     </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
                     <div class="card-content">
                         <h3>Pemasukan</h3>
                         <div class="amount">Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</div>
                     </div>
                 </div>
+            </div>
+
+            <div class="card income">
+                <div class="card-icon">📈</div>
+                <div class="card-content">
+                    <h3>Pemasukan</h3>
+                    <div class="amount">
+                        Rp{{ number_format($totalIncome, 0, ',', '.') }}
 
                 <div class="card expense">
                     <div class="card-icon">
@@ -817,6 +928,18 @@
                         <div class="amount">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</div>
                     </div>
                 </div>
+            </div>
+
+            <div class="card expense">
+                <div class="card-icon">📉</div>
+                <div class="card-content">
+                    <h3>Pengeluaran</h3>
+                    <div class="amount">
+                        Rp{{ number_format($totalExpense, 0, ',', '.') }}
+                    </div>
+                </div>
+            </div>
+        </div>
 
                 @if($goal)
                 <div class="card target">
@@ -836,6 +959,39 @@
                 @endif
             </div>
 
+        <!-- Bottom Section -->
+        <div class="bottom-section">
+            <div class="bottom-grid">
+                <!-- Chart Section -->
+                <div class="chart-section">
+                    <h2>Chart per Bulan</h2>
+                    <div class="chart-container">
+                        <div class="pie-chart"
+                        style="background: conic-gradient(
+                                    #00A311 0 {{ $incomePerc }}%,
+                                    #ED6363 {{ $incomePerc }}% 100%
+                                );">
+                        <div class="chart-label" style="--angle: {{ $incomeAngle }}deg;">
+                            {{ $incomePerc }}%
+                        </div>
+                        <div class="chart-label" style="--angle: {{ $expenseAngle }}deg;">
+                            {{ $expensePerc }}%
+                        </div>
+                    </div>
+
+
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-color income"></div>
+                                <span style="color: #00A311;">Pemasukan</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color expense"></div>
+                                <span style="color: #ED6363;">Pengeluaran</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             <!-- Bottom Section -->
             <div class="bottom-section">
                 <div class="bottom-grid">
@@ -862,18 +1018,38 @@
                         </div>
                     </div>
 
+                <!-- Transactions Section -->
+                <div class="transactions-section">
+                    <h2>Transaksi Terbaru</h2>
+                    <div class="transaction-list">
+                        @foreach($transactions as $trx)
+                            @php
+                                $isIncome = $trx['amount'] > 0;
+                            @endphp
                     <!-- Transactions Section -->
                     <div class="transactions-section">
                         <h2>Transaksi Terbaru</h2>
                         <div class="transaction-list">
                             @forelse($recentTransactions as $transaction)
                             <div class="transaction-item">
+                                <div class="transaction-name">{{ $trx['name'] }}</div>
+                                <div class="transaction-date">{{ $trx['date'] }}</div>
+                                <div class="transaction-amount {{ $isIncome ? 'income' : 'expense' }}">
+                                    {{ $isIncome ? '+ ' : '- ' }}Rp{{ number_format(abs($trx['amount']), 0, ',', '.') }}
+                                </div>
                                 <div class="transaction-name">{{ $transaction->keterangan }}</div>
                                 <div class="transaction-date">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y') }}</div>
                                 <div class="transaction-amount {{ $transaction->jenis == 'Pemasukan' ? 'income' : 'expense' }}">
                                     {{ $transaction->jenis == 'Pemasukan' ? '+' : '-' }} Rp {{ number_format($transaction->jumlah, 0, ',', '.') }}
                                 </div>
                             </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
                             @empty
                             <div style="text-align: center; padding: 40px; color: #999;">
                                 <p>Belum ada transaksi</p>
