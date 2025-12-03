@@ -4,12 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Dashboard Keuangan</title>
+    <title>Laporan - VOICA</title>
     <style>
+        /* Global Reset & Base */
+        @import url("https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css");
+        
         * {
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+
+        button:focus-visible {
+            outline: 2px solid #4a90e2 !important;
+            outline: -webkit-focus-ring-color auto 5px !important;
+        }
+
+        a {
+            text-decoration: none;
         }
 
         body {
@@ -23,7 +41,7 @@
             min-height: 100vh;
         }
 
-        /* Sidebar */
+        /* Sidebar - Same as dashboard */
         .sidebar {
             width: 100px;
             background: white;
@@ -36,7 +54,6 @@
             position: sticky;
             top: 0;
             height: 100vh;
-            justify-content: flex-start;
         }
 
         .logo {
@@ -58,6 +75,8 @@
             margin-bottom: 35px;
             cursor: pointer;
             transition: transform 0.2s;
+            text-decoration: none;
+            color: black;
         }
 
         .menu-item:hover {
@@ -90,310 +109,236 @@
             border: 1px solid #00456A;
             border-radius: 10px;
             margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
         }
 
-        .header-text h1 {
+        .header h1 {
             color: #2C3E50;
             font-size: clamp(24px, 4vw, 40px);
             font-weight: 700;
             margin-bottom: 5px;
         }
 
-        .header-text p {
+        .header p {
             color: #2C3E50;
             font-size: clamp(14px, 2vw, 20px);
         }
 
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            border: 1px solid #00456A;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            margin-bottom: 25px;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-title {
+            display: flex;
+            align-items: center;
+            color: #2C3E50;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            color: #676363;
+            font-size: 16px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .filter-separator {
+            color: #676363;
+            font-size: 20px;
+            font-weight: 500;
+            padding: 0 5px;
+            flex-shrink: 0;
+        }
+
+        .filter-select {
+            padding: 10px 20px;
+            border: 2px solid #E3F5FF;
+            border-radius: 10px;
+            background: #E3E2E2;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            color: #676363;
+            flex: 1;
+            min-width: 120px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #00456A;
+            background: white;
+        }
+
+        .btn-search {
+            background: #557F96;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #00456A80;
+            flex-shrink: 0;
+        }
+
+        .btn-search:hover {
+            background: #00456A;
+            transform: translateY(-2px);
+        }
+
+        .btn-download {
+            background: #557F96;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #00456A80;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-download:hover {
+            background: #00456A;
+            transform: translateY(-2px);
+        }
+
+        /* Table Section */
+        .table-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #00456A;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px; /* Ensure table doesn't squish too much */
+        }
+
+        thead {
+            background: #00456A;
+            color: white;
+        }
+
+        th {
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 16px;
+            border-bottom: 1px solid #E3F5FF;
+            vertical-align: middle;
+        }
+
+        /* Specific Column Styling */
+        th:nth-child(1), td:nth-child(1) { /* Tanggal */
+            white-space: nowrap;
+            width: 15%;
+        }
+
+        th:nth-child(3), td:nth-child(3), /* Nominal */
+        th:nth-child(4), td:nth-child(4) { /* Saldo */
+            text-align: right;
+            white-space: nowrap;
+            font-family: 'Consolas', 'Monaco', monospace; /* Monospace for numbers alignment */
+            font-weight: 600;
+        }
+
+        th:last-child, td:last-child { /* Catatan */
+            text-align: left;
+        }
+
+        tbody tr:hover {
+            background: #F8FCFF;
+        }
+
+        /* Voice Button */
         .voice-btn {
             background: #00456A;
             color: white;
             padding: 12px 24px;
             border-radius: 100px;
-            border: 1px solid rgba(32, 56, 55, 0.5);
+            border: none;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 10px;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 69, 106, 0.3);
         }
 
         .voice-btn:hover {
             background: #003855;
-        }
-
-        /* Cards Grid */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 30px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .card-icon {
-            width: 60px;
-            height: 60px;
-            background: #DDE6E6;
-            border-radius: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .card-content h3 {
-            color: rgba(44, 62, 80, 0.8);
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .card-content .amount {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .card.balance {
-            border: 1px solid #00456A;
-        }
-
-        .card.balance .amount {
-            color: #00456A;
-        }
-
-        .card.income {
-            border: 1px solid #00670B;
-        }
-
-        .card.income .amount {
-            color: #00A311;
-            font-weight: 800;
-        }
-
-        .card.expense {
-            border: 1px solid #A61C1C;
-        }
-
-        .card.expense .amount {
-            color: #ED6363;
-            font-weight: 800;
-        }
-
-        .card.target .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #D9D9D9;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-
-        .card.target .progress-fill {
-            height: 100%;
-            background: #6B9BD1;
-            width: 50%;
-        }
-
-        /* Bottom Section */
-        .bottom-section {
-            background: white;
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0px 0px 50px rgba(0, 0, 0, 0.2);
-        }
-
-        .bottom-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-        }
-
-        .chart-section h2,
-        .transactions-section h2 {
-            color: rgba(44, 62, 80, 0.8);
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        /* Chart */
-        .chart-container {
-            position: relative;
-            padding: 20px;
-            border: 1px solid #203838;
-            border-radius: 20px;
-            box-shadow: 1px 3px 4px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .pie-chart {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: conic-gradient(#00A311 0% 60%, #ED6363 60% 100%);
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .chart-legend {
-            display: flex;
-            gap: 30px;
-            font-size: 16px;
-            font-weight: 800;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-color {
-            width: 12px;
-            height: 13px;
-        }
-
-        .legend-color.income {
-            background: #00A311;
-        }
-
-        .legend-color.expense {
-            background: #ED6363;
-        }
-
-        /* Transactions */
-        .transaction-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .transaction-item {
-            background: #E3F5FF;
-            padding: 15px 20px;
-            border-radius: 10px;
-            border: 1px solid #203838;
-            box-shadow: 1px 4px 3px 1px rgba(0, 0, 0, 0.15);
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .transaction-name {
-            font-size: 18px;
-            font-weight: 400;
-        }
-
-        .transaction-date {
-            color: rgba(0, 0, 0, 0.6);
-            font-size: 16px;
-            text-align: center;
-        }
-
-        .transaction-amount {
-            font-size: 18px;
-            font-weight: 800;
-            text-align: right;
-        }
-
-        .transaction-amount.income {
-            color: #00A311;
-        }
-
-        .transaction-amount.expense {
-            color: #ED6363;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 69, 106, 0.4);
         }
 
         /* Responsive */
-        @media (max-width: 1024px) {
-            .bottom-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         @media (max-width: 768px) {
             .sidebar {
                 width: 80px;
-                padding: 15px 0;
             }
 
-            .logo {
-                width: 50px;
-                height: 50px;
-            }
-
-            .menu-item svg {
-                width: 28px;
-                height: 28px;
-            }
-
-            .menu-item span {
-                font-size: 10px;
-            }
-
-            .main-content {
-                padding: 15px;
-            }
-
-            .cards-grid {
-                grid-template-columns: 1fr;
-            }
-
-            /* Pie Chart Mobile */
-            .pie-chart {
-                width: 150px;
-                height: 150px;
-            }
-
-            .chart-legend {
+            .filter-controls {
                 flex-direction: column;
-                gap: 10px;
-                font-size: 14px;
+                align-items: stretch;
             }
 
-            /* Transaction Mobile */
-            .transaction-item {
-                grid-template-columns: 1fr;
-                gap: 8px;
-                padding: 12px 15px;
+            .filter-select {
+                width: 100%;
             }
 
-            .transaction-name {
-                font-size: 16px;
-                font-weight: 600;
+            .btn-search,
+            .btn-download {
+                width: 100%;
+                justify-content: center;
             }
 
-            .transaction-date {
-                font-size: 14px;
-                text-align: left;
+            .table-section {
+                overflow-x: scroll;
             }
 
-            .transaction-amount {
-                font-size: 16px;
-                text-align: left;
-                font-weight: 700;
-            }
-
-            /* Voice Button Mobile - Icon Only (Microphone) */
+            /* Voice Button Mobile - Icon Only */
             .voice-btn {
                 width: 60px;
                 height: 60px;
@@ -407,8 +352,6 @@
                 align-items: center;
                 justify-content: center;
                 box-shadow: 0 6px 20px rgba(0, 69, 106, 0.4);
-                z-index: 1000;
-                background: #00456A;
             }
 
             .voice-btn:hover {
@@ -417,294 +360,14 @@
             }
 
             .voice-btn svg {
-                width: 24px;
-                height: 30px;
-                margin: 0;
+                width: 28px;
+                height: 28px;
             }
 
             .voice-btn-text {
-                display: none !important;
+                display: none;
             }
         }
-
-        /* Voice Modal Styles */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            animation: slideUp 0.3s ease;
-            position: relative;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .modal-header h2 {
-            color: #2C3E50;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
-            color: #999;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .close-btn:hover {
-            color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            color: #2C3E50;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #E3F5FF;
-            border-radius: 10px;
-            font-size: 16px;
-            font-family: 'Inter', sans-serif;
-            background: #F8FCFF;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #00456A;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(0, 69, 106, 0.1);
-            transform: translateY(-1px);
-        }
-
-        .form-group select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300456A' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            padding-right: 40px;
-        }
-
-        .form-group select:hover {
-            border-color: #6B9BD1;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 25px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 100px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #00456A;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #003855;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 69, 106, 0.3);
-        }
-
-        .btn-secondary {
-            background: #E3F5FF;
-            color: #00456A;
-            border: 1px solid #00456A;
-        }
-
-        .btn-secondary:hover {
-            background: #D0E9F5;
-        }
-
-        /* Loading Spinner */
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .loading-content {
-            text-align: center;
-            color: white;
-        }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        /* Recording Animation */
-        .voice-btn.recording {
-            background: #ED6363;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(237, 99, 99, 0.7);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 0 10px rgba(237, 99, 99, 0);
-            }
-        }
-
-        /* Toast Notification */
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-            display: none;
-            align-items: center;
-            gap: 10px;
-            z-index: 3000;
-            animation: slideInRight 0.3s ease;
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .toast.active {
-            display: flex;
-        }
-
-        .toast.success {
-            border-left: 4px solid #00A311;
-        }
-
-        .toast.error {
-            border-left: 4px solid #ED6363;
-        }
-
-        .toast-icon {
-            font-size: 24px;
-        }
-
-        .toast-message {
-            font-size: 14px;
-            color: #2C3E50;
-        }
-    
     </style>
 </head>
 <body>
@@ -715,14 +378,14 @@
                 <img src="{{ asset('images/voica-logo.png') }}" alt="VOICA Logo" style="width: 100%; height: auto; object-fit: contain;">
             </div>
             
-            <div class="menu-item">
+            <a href="{{ route('dashboard') }}" class="menu-item">
                 <svg viewBox="0 0 39 41" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M4.875 36.4444H12.1875V22.7778H26.8125V36.4444H34.125V15.9444L19.5 5.69444L4.875 15.9444V36.4444ZM0 41V13.6667L19.5 0L39 13.6667V41H21.9375V27.3333H17.0625V41H0Z" fill="black"/>
                 </svg>
                 <span>Dashboard</span>
-            </div>
+            </a>
 
-            <a href="{{ route('budgeting') }}" class="menu-item" >
+            <a href="{{ route('budgeting') }}" class="menu-item">
                 <svg viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M45.9481 24.5292C45.7971 24.6842 45.6862 24.8738 45.6252 25.0814C45.5641 25.2891 45.5547 25.5085 45.5977 25.7206C45.8103 26.7839 45.9167 27.877 45.9167 29C45.9164 32.4104 44.8854 35.7411 42.9588 38.5553C41.0321 41.3694 38.2999 43.5355 35.1206 44.7694C31.9412 46.0033 28.4631 46.2474 25.1425 45.4697C21.8219 44.6921 18.8139 42.9289 16.5131 40.4115C16.399 40.2836 16.2603 40.1798 16.1054 40.1065C15.9505 40.0331 15.7824 39.9916 15.6111 39.9844C15.4398 39.9771 15.2688 40.0044 15.1083 40.0645C14.9477 40.1246 14.8009 40.2163 14.6764 40.3342C14.4649 40.539 14.3402 40.8172 14.3281 41.1114C14.316 41.4055 14.4173 41.6931 14.6112 41.9147C17.4501 45.0802 21.2535 47.2216 25.4324 48.0072C29.6113 48.7928 33.9327 48.1787 37.7274 46.2602C41.5221 44.3417 44.5785 41.2256 46.4233 37.3945C48.2681 33.5634 48.7984 29.231 47.9322 25.0681C47.7413 24.1425 46.6151 23.8646 45.9481 24.5316M42.9901 17.3057C43.2056 17.097 43.3308 16.8122 43.339 16.5123C43.3471 16.2124 43.2375 15.9212 43.0336 15.7011C40.123 12.6268 36.2838 10.5929 32.1055 9.91156C27.9271 9.23027 23.6407 9.93929 19.9043 11.9297C16.1679 13.9202 13.1881 17.0821 11.4225 20.9298C9.65687 24.7776 9.20303 29.0985 10.1307 33.2292C10.3337 34.1427 11.4502 34.4109 12.1123 33.7487C12.4265 33.4346 12.5473 32.9754 12.4555 32.5404C11.6852 28.9451 12.1073 25.1966 13.6578 21.8626C15.2084 18.5286 17.803 15.7906 21.0488 14.0631C24.2947 12.3355 28.015 11.7126 31.6465 12.2885C35.2781 12.8645 38.6231 14.6079 41.1752 17.255C41.2908 17.3775 41.4294 17.476 41.5831 17.5448C41.7368 17.6137 41.9025 17.6516 42.0709 17.6563C42.2392 17.661 42.4069 17.6325 42.5642 17.5723C42.7215 17.5122 42.8678 17.4216 42.9901 17.3057Z" fill="black"/>
                 </svg>
@@ -749,6 +412,7 @@
                 </svg>
                 <span>Settings</span>
             </a>
+
             <div class="menu-item" style="margin-top: auto; margin-bottom: 20px;">
                 <form method="POST" action="{{ route('logout') }}" style="display: contents;">
                     @csrf
@@ -761,130 +425,141 @@
                 </form>
             </div>
         </div>
-        
-        
 
         <!-- Main Content -->
         <div class="main-content">
             <!-- Header -->
             <div class="header">
-                <div class="header-text">
-                    <h1>Halo, {{ Auth::user()->name }}!</h1>
-                    <p>Let's track your spending today</p>
-                </div>
-                <button class="voice-btn">
-                    <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
-                        <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
-                    </svg>
-                    Tekan Untuk Bersuara
-                </button>
+                <h1>Laporan</h1>
+                <p>Yuk, lihat laporan anda!</p>
             </div>
 
-            <!-- Cards Grid -->
-            <div class="cards-grid">
-                <div class="card balance">
-                    <div class="card-icon">
-                        <svg width="30" height="24" viewBox="0 0 37 29" fill="none">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M32.5075 4.12205H3.82441V24.7324H32.5075V4.12205ZM3.82441 0C1.71225 0 0 1.8455 0 4.12205V24.7324C0 27.0089 1.71225 28.8544 3.82441 28.8544H32.5075C34.6196 28.8544 36.3318 27.0089 36.3318 24.7324V4.12205C36.3318 1.8455 34.6196 0 32.5075 0H3.82441Z" fill="#00456A" fill-opacity="0.7"/>
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-header">
+                    <div class="filter-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right: 8px;">
+                            <path d="M19 4H5C3.89 4 3 4.9 3 6V8C3 8.55 3.45 9 4 9H20C20.55 9 21 8.55 21 8V6C21 4.9 20.11 4 19 4ZM19 20H5C3.89 20 3 19.1 3 18V16C3 15.45 3.45 15 4 15H20C20.55 15 21 15.45 21 16V18C21 19.1 20.11 20 19 20Z" fill="#2C3E50"/>
                         </svg>
+                        Pilih Periode
                     </div>
-                    <div class="card-content">
-                        <h3>Saldo saat ini</h3>
-                        <div class="amount">Rp {{ number_format($saldo, 0, ',', '.') }}</div>
-                    </div>
+                    <button class="btn btn-download">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 6px;">
+                            <path d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z" fill="white"/>
+                        </svg>
+                        Unduh Laporan
+                    </button>
                 </div>
 
-                <div class="card income">
-                    <div class="card-icon">
-                        <svg width="30" height="30" viewBox="0 0 39 35" fill="none">
-                            <path d="M10.2632 17.9134V10.105C10.2632 9.33946 10.5628 8.68906 11.1622 8.15381C11.7616 7.61855 12.4882 7.35031 13.3421 7.34908C14.196 7.34786 14.9233 7.6161 15.524 8.15381C16.1248 8.69151 16.4238 9.3419 16.421 10.105V17.9134C16.421 18.6789 16.122 19.3299 15.524 19.8664C14.9261 20.4029 14.1987 20.6705 13.3421 20.6693C12.4855 20.6681 11.7588 20.4004 11.1622 19.8664C10.5656 19.3324 10.2659 18.6814 10.2632 17.9134Z" fill="#00670B"/>
-                        </svg>
-                    </div>
-                    <div class="card-content">
-                        <h3>Pemasukan</h3>
-                        <div class="amount">Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</div>
-                    </div>
-                </div>
+                <div class="filter-controls">
+                    <div class="filter-label">Dari</div>
+                    
+                    <select class="filter-select" id="bulanDari">
+                        <option value="">Bulan</option>
+                        <option value="1">Januari</option>
+                        <option value="2">Februari</option>
+                        <option value="3">Maret</option>
+                        <option value="4">April</option>
+                        <option value="5">Mei</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">Agustus</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
 
-                <div class="card expense">
-                    <div class="card-icon">
-                        <svg width="30" height="30" viewBox="0 0 39 35" fill="none">
-                            <path opacity="0.95" d="M10.0254 17.0866V24.895C10.0254 25.6605 10.3181 26.3109 10.9036 26.8462C11.4891 27.3815 12.1989 27.6497 13.033 27.6509C13.8671 27.6521 14.5776 27.3839 15.1644 26.8462C15.7512 26.3085 16.0433 25.6581 16.0406 24.895V17.0866C16.0406 16.3211 15.7485 15.6701 15.1644 15.1336C14.5802 14.5971 13.8698 14.3295 13.033 14.3307C12.1962 14.3319 11.4864 14.5996 10.9036 15.1336C10.3208 15.6676 10.0281 16.3186 10.0254 17.0866Z" fill="#A61C1C"/>
-                        </svg>
-                    </div>
-                    <div class="card-content">
-                        <h3>Pengeluaran</h3>
-                        <div class="amount">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</div>
-                    </div>
-                </div>
+                    <div class="filter-separator">-</div>
 
-                @if($goal)
-                <div class="card target">
-                    <div class="card-icon">
-                        <svg width="40" height="40" viewBox="0 0 52 54" fill="none">
-                            <path d="M23.8333 41.265C23.8287 40.9973 23.7375 40.739 23.5744 40.5317C23.4113 40.3244 23.1858 40.1801 22.9341 40.122C20.5117 39.5109 18.3096 38.1894 16.5901 36.315C16.416 36.1186 16.1834 35.9886 15.9296 35.9457C15.6758 35.9029 15.4156 35.9498 15.1905 36.0788L11.349 38.385C11.2165 38.461 11.1017 38.5663 11.0127 38.6934C10.9237 38.8206 10.8627 38.9664 10.834 39.1208C10.8053 39.2751 10.8095 39.434 10.8465 39.5864C10.8834 39.7389 10.9521 39.881 11.0478 40.0028C14.2194 43.9368 18.7108 46.474 23.6145 47.1015C23.642 47.105 23.6699 47.1024 23.6964 47.0938C23.7229 47.0853 23.7473 47.0709 23.768 47.0517C23.7887 47.0326 23.8053 47.009 23.8165 46.9827C23.8278 46.9564 23.8335 46.9278 23.8333 46.899V41.265Z" fill="#00456A" fill-opacity="0.7"/>
-                        </svg>
-                    </div>
-                    <div class="card-content">
-                        <h3>{{ $goal->namaGoal }}</h3>
-                        <div class="amount" style="color: #2C3E50; font-size: 24px; font-weight: 400;">{{ number_format($goalPercentage, 1) }}%</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ min($goalPercentage, 100) }}%"></div>
-                        </div>
-                    </div>
+                    <select class="filter-select" id="bulanSampai">
+                        <option value="">Bulan</option>
+                        <option value="1">Januari</option>
+                        <option value="2">Februari</option>
+                        <option value="3">Maret</option>
+                        <option value="4">April</option>
+                        <option value="5">Mei</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">Agustus</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+
+                    <select class="filter-select" id="tahun">
+                        <option value="">Tahun</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+
+                    <button class="btn btn-search">Cari</button>
                 </div>
-                @endif
             </div>
 
-            <!-- Bottom Section -->
-            <div class="bottom-section">
-                <div class="bottom-grid">
-                    <!-- Chart Section -->
-                    <div class="chart-section">
-                        <h2>Chart per Bulan</h2>
-                        <div class="chart-container">
-                            @php
-                                $total = $totalPemasukan + $totalPengeluaran;
-                                $pemasukanPercent = $total > 0 ? ($totalPemasukan / $total * 100) : 50;
-                                $pengeluaranPercent = $total > 0 ? ($totalPengeluaran / $total * 100) : 50;
-                            @endphp
-                            <div class="pie-chart" style="background: conic-gradient(#00A311 0% {{ $pemasukanPercent }}%, #ED6363 {{ $pemasukanPercent }}% 100%);"></div>
-                            <div class="chart-legend">
-                                <div class="legend-item">
-                                    <div class="legend-color income"></div>
-                                    <span style="color: #00A311;">Pemasukan ({{ number_format($pemasukanPercent, 1) }}%)</span>
-                                </div>
-                                <div class="legend-item">
-                                    <div class="legend-color expense"></div>
-                                    <span style="color: #ED6363;">Pengeluaran ({{ number_format($pengeluaranPercent, 1) }}%)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transactions Section -->
-                    <div class="transactions-section">
-                        <h2>Transaksi Terbaru</h2>
-                        <div class="transaction-list">
-                            @forelse($recentTransactions as $transaction)
-                            <div class="transaction-item">
-                                <div class="transaction-name">{{ $transaction->keterangan }}</div>
-                                <div class="transaction-date">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y') }}</div>
-                                <div class="transaction-amount {{ $transaction->jenis == 'Pemasukan' ? 'income' : 'expense' }}">
-                                    {{ $transaction->jenis == 'Pemasukan' ? '+' : '-' }} Rp {{ number_format($transaction->jumlah, 0, ',', '.') }}
-                                </div>
-                            </div>
-                            @empty
-                            <div style="text-align: center; padding: 40px; color: #999;">
-                                <p>Belum ada transaksi</p>
-                            </div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
+            <!-- Table Section -->
+            <div class="table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Kategori</th>
+                            <th>Nominal</th>
+                            <th>Saldo</th>
+                            <th>Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>5 Oktober 2025</td>
+                            <td>Makanan</td>
+                            <td>Rp 50.000</td>
+                            <td>Rp 50.000</td>
+                            <td>Sate sate</td>
+                        </tr>
+                        <tr>
+                            <td>5 Oktober 2025</td>
+                            <td>Makanan</td>
+                            <td>Rp 50.000</td>
+                            <td>Rp 50.000</td>
+                            <td>Sate sate</td>
+                        </tr>
+                        <tr>
+                            <td>5 Oktober 2025</td>
+                            <td>Makanan</td>
+                            <td>Rp 50.000</td>
+                            <td>Rp 50.000</td>
+                            <td>Sate sate</td>
+                        </tr>
+                        <tr>
+                            <td>5 Oktober 2025</td>
+                            <td>Makanan</td>
+                            <td>Rp 50.000</td>
+                            <td>Rp 50.000</td>
+                            <td>Sate sate</td>
+                        </tr>
+                        <tr>
+                            <td>5 Oktober 2025</td>
+                            <td>Makanan</td>
+                            <td>Rp 50.000</td>
+                            <td>Rp 50.000</td>
+                            <td>Sate sate</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+
+    <!-- Voice Button -->
+    <button class="voice-btn">
+        <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+            <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+        </svg>
+        <span class="voice-btn-text">Tekan Untuk Bersuara</span>
+    </button>
 
     <!-- Voice Transaction Modal -->
     <div class="modal-overlay" id="voiceModal">
@@ -936,26 +611,6 @@
                     <textarea id="keterangan" name="keterangan" placeholder="Masukkan keterangan transaksi" required></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <label for="budget">Alokasi Budget (Opsional)</label>
-                    <select id="budget" name="budget">
-                        <option value="">Tidak ada</option>
-                        @foreach($budgets as $budget)
-                        <option value="{{ $budget->id }}">{{ $budget->namaBudget }} ({{ $budget->kategori }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="goal">Alokasi Tabungan (Opsional)</label>
-                    <select id="goal" name="goal">
-                        <option value="">Tidak ada</option>
-                        @foreach($goals as $goalItem)
-                        <option value="{{ $goalItem->id }}">{{ $goalItem->namaGoal }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
                     <button type="submit" class="btn btn-primary">💾 Simpan Transaksi</button>
@@ -977,6 +632,215 @@
         <div class="toast-icon" id="toastIcon"></div>
         <div class="toast-message" id="toastMessage"></div>
     </div>
+
+    <style>
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: #00456A;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #00456A;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #00456A;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00456A;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 4000;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.active {
+            transform: translateX(0);
+        }
+
+        .toast.success { border-left: 5px solid #2ecc71; }
+        .toast.error { border-left: 5px solid #e74c3c; }
+
+        .toast-message {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .voice-btn.recording {
+            background: #ED6363;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(237, 99, 99, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(237, 99, 99, 0); }
+        }
+    </style>
 
     <script>
         // Configuration
@@ -1052,7 +916,7 @@
                         break;
                 }
                 
-                showToast(errorMessage, 'error');
+                showToast('❌ ' + errorMessage, 'error');
             };
 
             return true;
@@ -1089,14 +953,23 @@
 
         function updateVoiceButtonRecording(recording) {
             const voiceBtn = document.querySelector('.voice-btn');
-            const voiceText = voiceBtn.querySelector('.voice-btn-text');
             
             if (recording) {
                 voiceBtn.classList.add('recording');
-                if (voiceText) voiceText.textContent = '🔴 Merekam... (Klik untuk Stop)';
+                voiceBtn.innerHTML = `
+                    <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+                        <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+                    </svg>
+                    <span class="voice-btn-text">🔴 Merekam... (Klik untuk Stop)</span>
+                `;
             } else {
                 voiceBtn.classList.remove('recording');
-                if (voiceText) voiceText.textContent = 'Tekan Untuk Bersuara';
+                voiceBtn.innerHTML = `
+                    <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+                        <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+                    </svg>
+                    <span class="voice-btn-text">Tekan Untuk Bersuara</span>
+                `;
             }
         }
 
@@ -1147,9 +1020,6 @@
             document.getElementById('kategori').value = data.kategori || '';
             document.getElementById('jumlah').value = data.jumlah || '';
             document.getElementById('keterangan').value = data.keterangan || '';
-            
-            // TODO: Set budget and goal if detected
-            // For now, we'll leave them empty for user to select manually
         }
 
         // Modal Functions
@@ -1173,8 +1043,8 @@
                 kategori: document.getElementById('kategori').value,
                 jumlah: parseFloat(document.getElementById('jumlah').value),
                 keterangan: document.getElementById('keterangan').value,
-                budget_id: document.getElementById('budget').value || null,
-                goal_id: document.getElementById('goal').value || null
+                budget_id: null, // Optional for Laporan page
+                goal_id: null    // Optional for Laporan page
             };
             
             try {
@@ -1200,7 +1070,7 @@
                     closeModal();
                     showToast('✅ Transaksi berhasil disimpan!', 'success');
                     
-                    // Reload page after 1.5 seconds
+                    // Reload page after 1.5 seconds to show new data
                     setTimeout(() => {
                         location.reload();
                     }, 1500);
@@ -1262,5 +1132,4 @@
         });
     </script>
 </body>
-
 </html>
