@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GoalsController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -40,6 +41,12 @@ Route::middleware('guest')->group(function () {
     Route::get('/budgeting', function () {
         return view('budget');
     })->name('budgeting');
+
+    // Goals
+    Route::get('/goals', [GoalsController::class, 'index'])->name('goals');
+    Route::post('/goals', [GoalsController::class, 'store'])->name('goals.store');
+    Route::put('/goals/{id}', [GoalsController::class, 'update'])->name('goals.update');
+    Route::delete('/goals/{id}', [GoalsController::class, 'destroy'])->name('goals.destroy');
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])

@@ -8,7 +8,12 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // sementara: kirim ke view "dashboard"
+        // If AJAX request, return only the inner content so the sidebar isn't duplicated
+        if (request()->ajax() || request()->wantsJson()) {
+            return view('dashboard._content');
+        }
+
+        // Full-page render (direct load)
         return view('dashboard');
     }
 }
