@@ -36,22 +36,31 @@ class AuthController extends Controller
      * Handle user registration
      */
     public function register(Request $request)
-    {
-        // Custom validation untuk voice audio (terima file ATAU base64)
+    {   
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:20', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
-            'voice_audio_base64' => ['nullable', 'string'],
-        ]);
+    'name' => ['required', 'string', 'max:255'],
+    'phone' => ['required', 'string', 'max:20', 'unique:users'],
+    'password' => ['required', 'confirmed', Password::min(8)],
+    // voice optional total
+    'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
+    'voice_audio_base64' => ['nullable', 'string'],
+]);
 
-        // Validasi tambahan: minimal salah satu harus ada
-        $validator->after(function ($validator) use ($request) {
-            if (!$request->hasFile('voice_audio_file') && !$request->filled('voice_audio_base64')) {
-                $validator->errors()->add('voice_audio', 'Rekaman suara diperlukan untuk pendaftaran');
-            }
-        });
+        // // Custom validation untuk voice audio (terima file ATAU base64)
+        // $validator = Validator::make($request->all(), [
+        //     'name' => ['required', 'string', 'max:255'],
+        //     'phone' => ['required', 'string', 'max:20', 'unique:users'],
+        //     'password' => ['required', 'confirmed', Password::min(8)],
+        //     'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
+        //     'voice_audio_base64' => ['nullable', 'string'],
+        // ]);
+
+        // // Validasi tambahan: minimal salah satu harus ada
+        // $validator->after(function ($validator) use ($request) {
+        //     if (!$request->hasFile('voice_audio_file') && !$request->filled('voice_audio_base64')) {
+        //         $validator->errors()->add('voice_audio', 'Rekaman suara diperlukan untuk pendaftaran');
+        //     }
+        // });
 
         if ($validator->fails()) {
             return back()
@@ -62,38 +71,41 @@ class AuthController extends Controller
 
         try {
             // Proses audio: prioritaskan file upload, fallback ke base64
-            $audioFile = $this->processAudioInput($request);
+            // $audioFile = $this->processAudioInput($request);
             
-            if (!$audioFile) {
-                return back()
-                    ->withErrors(['voice_audio' => 'Gagal memproses file audio'])
-                    ->withInput()
-                    ->with('mode', 'register');
-            }
+            // if (!$audioFile) {
+            //     return back()
+            //         ->withErrors(['voice_audio' => 'Gagal memproses file audio'])
+            //         ->withInput()
+            //         ->with('mode', 'register');
+            // }
 
-            // Process voice enrollment
-            $voiceResult = $this->processVoiceEnrollment($audioFile);
+            // // Process voice enrollment
+            // $voiceResult = $this->processVoiceEnrollment($audioFile);
             
-            // Cleanup temporary file jika dari base64
-            if ($audioFile->getClientOriginalName() === 'recorded_voice') {
-                $this->voiceAuthService->cleanup($audioFile->getRealPath());
-            }
+            // // Cleanup temporary file jika dari base64
+            // if ($audioFile->getClientOriginalName() === 'recorded_voice') {
+            //     $this->voiceAuthService->cleanup($audioFile->getRealPath());
+            // }
             
-            if (!$voiceResult['success']) {
-                return back()
-                    ->withErrors(['voice_audio' => $voiceResult['error']])
-                    ->withInput()
-                    ->with('mode', 'register');
-            }
+            // if (!$voiceResult['success']) {
+            //     return back()
+            //         ->withErrors(['voice_audio' => $voiceResult['error']])
+            //         ->withInput()
+            //         ->with('mode', 'register');
+            // }
 
             // Create user
             $user = User::create([
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'voice_path' => $voiceResult['voice_path'],
-                'voice_embedding' => json_encode($voiceResult['features']),
-                'voice_enrolled_at' => now(),
+                'voice_path' => null,
+                //'voice_path' => $voiceResult['voice_path'],
+                'voice_embedding' => null,
+                //'voice_embedding' => json_encode($voiceResult['features']),
+                'voice_enrolled_at' => null,
+                //'voice_enrolled_at' => now(),
             ]);
 
             // Log the user in
@@ -132,27 +144,37 @@ class AuthController extends Controller
 
         $loginField = $request->input('phone');
 
-        $user = User::where('phone', $loginField)
-                ->orWhere('name', $loginField)
-                ->first();
+        // $user = User::where('phone', $loginField)
+        //         ->orWhere('name', $loginField)
+        //         ->first();
 
-        $fieldType = $user->phone === $loginField ? 'phone' : 'name';
-
+        // $fieldType = $user->phone === $loginField ? 'phone' : 'name';
+        $fieldType = is_numeric($loginField) ? 'phone' : 'name';
+        
         $credentials = [
             $fieldType => $loginField,
             'password' => $request->password,
         ];
         
-
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended('dashboard');
-        }
-
+        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
         return back()
-            ->withErrors(['phone' => 'Kredensial tidak valid'])
+            ->withErrors(['phone' => 'Nama / nomor telepon atau kata sandi salah'])
             ->withInput()
             ->with('mode', 'login');
+    }
+
+        // if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        //     $request->session()->regenerate();
+        //     return redirect()->intended('dashboard');
+        // }
+
+         $request->session()->regenerate();
+
+    return redirect()->intended('dashboard');
+        // return back()
+        //     ->withErrors(['phone' => 'Kredensial tidak valid'])
+        //     ->withInput()
+        //     ->with('mode', 'login');
     }
 
     /**
