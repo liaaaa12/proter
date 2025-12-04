@@ -109,10 +109,9 @@ class AuthController extends Controller
                 //'voice_enrolled_at' => now(),
             ]);
 
-            // Log the user in
-            Auth::login($user);
+            // Redirect to login page with success message (no auto-login)
+            return redirect()->route('login')->with('status', 'Registrasi berhasil! Silakan login dengan akun Anda.');
 
-            return redirect()->route('dashboard')->with('status', 'Registrasi berhasil! Suara Anda telah terdaftar.');
         } catch (\Exception $e) {
             // Clean up voice file if exists
             if (isset($voiceResult) && isset($voiceResult['voice_path'])) {
@@ -455,3 +454,4 @@ class AuthController extends Controller
         }
     }
 }
+

@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Laporan - VOICA</title>
+    <style>
+        /* Global Reset & Base */
+        @import url("https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css");
+        
+        * {
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+
+        button:focus-visible {
+            outline: 2px solid #4a90e2 !important;
+            outline: -webkit-focus-ring-color auto 5px !important;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #E3F5FF;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar - Same as dashboard */
+        .sidebar {
+            width: 100px;
+            background: white;
+            box-shadow: 1px 4px 5px rgba(0, 0, 0, 0.2);
+            border-right: 1px solid #D2C7C7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 44px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 26px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.05);
+        }
+
+        .menu-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: #E3F5FF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .menu-item span {
+            font-size: 18px;
+            font-weight: 750;
+            text-align: center;
+            color: #000;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            border: 1px solid #00456A;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #2C3E50;
+            font-size: clamp(24px, 4vw, 40px);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #2C3E50;
+            font-size: clamp(14px, 2vw, 20px);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            border: 1px solid #00456A;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            margin-bottom: 25px;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-title {
+            display: flex;
+            align-items: center;
+            color: #2C3E50;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            color: #676363;
+            font-size: 16px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .filter-separator {
+            color: #676363;
+            font-size: 20px;
+            font-weight: 500;
+            padding: 0 5px;
+            flex-shrink: 0;
+        }
+
+        .filter-select {
+            padding: 10px 20px;
+            border: 2px solid #E3F5FF;
+            border-radius: 10px;
+            background: #E3E2E2;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            color: #676363;
+            flex: 1;
+            min-width: 120px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #00456A;
+            background: white;
+        }
+
+        .btn-search {
+            background: #557F96;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #00456A80;
+            flex-shrink: 0;
+        }
+
+        .btn-search:hover {
+            background: #00456A;
+            transform: translateY(-2px);
+        }
+
+        .btn-download {
+            background: #557F96;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #00456A80;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-download:hover {
+            background: #00456A;
+            transform: translateY(-2px);
+        }
+
+        /* Table Section */
+        .table-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #00456A;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px; /* Ensure table doesn't squish too much */
+        }
+
+        thead {
+            background: #00456A;
+            color: white;
+        }
+
+        th {
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 16px;
+            border-bottom: 1px solid #E3F5FF;
+            vertical-align: middle;
+        }
+
+        /* Specific Column Styling */
+        th:nth-child(1), td:nth-child(1) { /* Tanggal */
+            white-space: nowrap;
+            width: 15%;
+        }
+
+        th:nth-child(3), td:nth-child(3), /* Nominal */
+        th:nth-child(4), td:nth-child(4) { /* Saldo */
+            text-align: right;
+            white-space: nowrap;
+            font-family: 'Consolas', 'Monaco', monospace; /* Monospace for numbers alignment */
+            font-weight: 600;
+        }
+
+        th:last-child, td:last-child { /* Catatan */
+            text-align: left;
+        }
+
+        tbody tr:hover {
+            background: #F8FCFF;
+        }
+
+        /* Voice Button */
+        .voice-btn {
+            background: #00456A;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 100px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 69, 106, 0.3);
+        }
+
+        .voice-btn:hover {
+            background: #003855;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 69, 106, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 80px;
+                padding: 15px 0;
+            }
+
+            .logo {
+                width: 50px;
+                height: 50px;
+            }
+
+            .menu-item span {
+                font-size: 10px;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+
+            .btn-search,
+            .btn-download {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .table-section {
+                overflow-x: scroll;
+            }
+
+            /* Voice Button Mobile - Icon Only */
+            .voice-btn {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                padding: 0;
+                position: fixed;
+                top: auto;
+                bottom: 24px;
+                right: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 6px 20px rgba(0, 69, 106, 0.4);
+            }
+
+            .voice-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 8px 24px rgba(0, 69, 106, 0.5);
+            }
+
+            .voice-btn svg {
+                width: 28px;
+                height: 28px;
+            }
+
+            .voice-btn-text {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="{{ asset('images/voica-logo.png') }}" alt="VOICA Logo" style="width: 100%; height: auto; object-fit: contain;">
+            </div>
+            
+            <a href="{{ route('dashboard') }}" class="menu-item">
+                <div class="menu-item-icon">🏠</div>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ route('budgeting') }}" class="menu-item">
+                <div class="menu-item-icon">💰</div>
+                <span>Anggaran</span>
+            </a>
+
+            <div class="menu-item">
+                <div class="menu-item-icon">🎯</div>
+                <span>Target</span>
+            </div>
+
+            <a href="{{ route('laporan') }}" class="menu-item">
+                <div class="menu-item-icon">📊</div>
+                <span>Laporan</span>
+            </a>
+
+            <a href="{{ route('settings') }}" class="menu-item">
+                <div class="menu-item-icon">⚙️</div>
+                <span>Pengaturan</span>
+            </a>
+
+            <div class="menu-item" style="margin-top: auto; margin-bottom: 20px;">
+                <form method="POST" action="{{ route('logout') }}" style="display: contents;">
+                    @csrf
+                    <button type="submit" style="background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0;">
+                        <div class="menu-item-icon" style="background:#FFE4E4;">🚪</div>
+                        <span style="color: #F53003; font-size: 18px; font-weight: 750;">Keluar</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1>Laporan</h1>
+                <p>Yuk, lihat laporan anda!</p>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-header">
+                    <div class="filter-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right: 8px;">
+                            <path d="M19 4H5C3.89 4 3 4.9 3 6V8C3 8.55 3.45 9 4 9H20C20.55 9 21 8.55 21 8V6C21 4.9 20.11 4 19 4ZM19 20H5C3.89 20 3 19.1 3 18V16C3 15.45 3.45 15 4 15H20C20.55 15 21 15.45 21 16V18C21 19.1 20.11 20 19 20Z" fill="#2C3E50"/>
+                        </svg>
+                        Pilih Periode
+                    </div>
+                    <button class="btn btn-download" id="btnDownloadPdf">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 6px;">
+                            <path d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z" fill="white"/>
+                        </svg>
+                        Unduh Laporan
+                    </button>
+                </div>
+
+                <div class="filter-controls">
+                    <div class="filter-label">Dari</div>
+                    
+                    <select class="filter-select" id="bulanDari">
+                        <option value="">Bulan</option>
+                        <option value="1">Januari</option>
+                        <option value="2">Februari</option>
+                        <option value="3">Maret</option>
+                        <option value="4">April</option>
+                        <option value="5">Mei</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">Agustus</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+
+                    <select class="filter-select" id="tahunDari">
+                        <option value="">Tahun</option>
+                        @foreach($years as $year)
+                            <option value="{{ $year }}">{{ $year }}</option>
+                        @endforeach
+                    </select>
+
+                    <div class="filter-separator">-</div>
+
+                    <div class="filter-label">Sampai</div>
+
+                    <select class="filter-select" id="bulanSampai">
+                        <option value="">Bulan</option>
+                        <option value="1">Januari</option>
+                        <option value="2">Februari</option>
+                        <option value="3">Maret</option>
+                        <option value="4">April</option>
+                        <option value="5">Mei</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">Agustus</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+
+                    <select class="filter-select" id="tahunSampai">
+                        <option value="">Tahun</option>
+                        @foreach($years as $year)
+                            <option value="{{ $year }}">{{ $year }}</option>
+                        @endforeach
+                    </select>
+
+                    <button class="btn btn-search" id="btnCari">Cari</button>
+                </div>
+            </div>
+
+            <!-- Table Section -->
+            <div class="table-section">
+                <div id="periodInfo" style="margin-bottom: 15px; font-size: 16px; font-weight: 600; color: #00456A; display: none;">
+                    Periode: <span id="periodText"></span>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Kategori</th>
+                            <th>Nominal</th>
+                            <th>Saldo</th>
+                            <th>Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                                Pilih periode dan klik "Cari" untuk menampilkan data
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot id="tableSummary" style="display: none;">
+                        <tr style="background: #E3F5FF; font-weight: 700;">
+                            <td colspan="2" style="text-align: right; padding: 15px 20px;">Total Pemasukan:</td>
+                            <td id="totalPemasukan" style="text-align: right; color: #2ecc71;"></td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr style="background: #E3F5FF; font-weight: 700;">
+                            <td colspan="2" style="text-align: right; padding: 15px 20px;">Total Pengeluaran:</td>
+                            <td id="totalPengeluaran" style="text-align: right; color: #e74c3c;"></td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr style="background: #00456A; color: white; font-weight: 700;">
+                            <td colspan="2" style="text-align: right; padding: 15px 20px;">Saldo Akhir:</td>
+                            <td id="saldoAkhir" style="text-align: right;"></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Button -->
+    <button class="voice-btn">
+        <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+            <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+        </svg>
+        <span class="voice-btn-text">Tekan Untuk Bersuara</span>
+    </button>
+
+    <!-- Voice Transaction Modal -->
+    <div class="modal-overlay" id="voiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🎤 Transaksi Voice</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form id="transactionForm" onsubmit="saveTransaction(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="jenis">Jenis Transaksi *</label>
+                        <select id="jenis" name="jenis" required>
+                            <option value="">Pilih Jenis</option>
+                            <option value="Pemasukan">Pemasukan</option>
+                            <option value="Pengeluaran">Pengeluaran</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kategori">Kategori *</label>
+                        <select id="kategori" name="kategori" required>
+                            <option value="">Pilih Kategori</option>
+                            <option value="Makanan">Makanan</option>
+                            <option value="Transportasi">Transportasi</option>
+                            <option value="Hiburan">Hiburan</option>
+                            <option value="Kebutuhan">Kebutuhan</option>
+                            <option value="Belanja">Belanja</option>
+                            <option value="Kesehatan">Kesehatan</option>
+                            <option value="Pendidikan">Pendidikan</option>
+                            <option value="Gaji">Gaji</option>
+                            <option value="Bonus">Bonus</option>
+                            <option value="Investasi">Investasi</option>
+                            <option value="Tabungan">Tabungan</option>
+                            <option value="Sedekah">Sedekah</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="jumlah">Jumlah (Rp) *</label>
+                    <input type="number" id="jumlah" name="jumlah" placeholder="0" required min="0" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="keterangan">Keterangan *</label>
+                    <textarea id="keterangan" name="keterangan" placeholder="Masukkan keterangan transaksi" required></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">💾 Simpan Transaksi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loadingText">Memproses audio...</div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-icon" id="toastIcon"></div>
+        <div class="toast-message" id="toastMessage"></div>
+    </div>
+
+    <style>
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: #00456A;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #00456A;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #00456A;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00456A;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 4000;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.active {
+            transform: translateX(0);
+        }
+
+        .toast.success { border-left: 5px solid #2ecc71; }
+        .toast.error { border-left: 5px solid #e74c3c; }
+
+        .toast-message {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .voice-btn.recording {
+            background: #ED6363;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(237, 99, 99, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(237, 99, 99, 0); }
+        }
+    </style>
+
+    <script>
+        // Configuration
+        const LARAVEL_API_URL = '/api/voice-transaction';
+        const PARSE_API_URL = '/api/parse-voice-text';
+        
+        // Global variables
+        let recognition = null;
+        let isRecording = false;
+
+        // Initialize Web Speech API
+        function initSpeechRecognition() {
+            // Check browser support
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showToast('❌ Browser Anda tidak support voice recognition. Gunakan Chrome atau Edge.', 'error');
+                return false;
+            }
+
+            // Create recognition instance
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            // Configure recognition
+            recognition.lang = 'id-ID'; // Bahasa Indonesia
+            recognition.continuous = false; // Stop after one result
+            recognition.interimResults = false; // Only final results
+            recognition.maxAlternatives = 1;
+
+            // Event: Recognition starts
+            recognition.onstart = function() {
+                isRecording = true;
+                updateVoiceButtonRecording(true);
+                showToast('🎤 Mulai berbicara...', 'success');
+            };
+
+            // Event: Recognition ends
+            recognition.onend = function() {
+                isRecording = false;
+                updateVoiceButtonRecording(false);
+            };
+
+            // Event: Result received
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript;
+                const confidence = event.results[0][0].confidence;
+                
+                console.log('Speech recognized:', text, 'Confidence:', confidence);
+                
+                // Send to Laravel for parsing
+                sendTextToAPI(text);
+            };
+
+            // Event: Error occurred
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                isRecording = false;
+                updateVoiceButtonRecording(false);
+                
+                let errorMessage = 'Terjadi kesalahan saat mengenali suara.';
+                
+                switch(event.error) {
+                    case 'no-speech':
+                        errorMessage = 'Tidak ada suara terdeteksi. Silakan coba lagi.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage = 'Microphone tidak terdeteksi. Pastikan microphone terhubung.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage = 'Akses microphone ditolak. Izinkan akses microphone di browser settings.';
+                        break;
+                    case 'network':
+                        errorMessage = 'Koneksi internet bermasalah. Speech recognition memerlukan internet.';
+                        break;
+                }
+                
+                showToast('❌ ' + errorMessage, 'error');
+            };
+
+            return true;
+        }
+
+        // Voice Recording Functions
+        function startVoiceRecording() {
+            if (isRecording) {
+                // Stop recording
+                stopVoiceRecording();
+                return;
+            }
+            
+            // Initialize if not yet
+            if (!recognition) {
+                if (!initSpeechRecognition()) {
+                    return;
+                }
+            }
+            
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Error starting recognition:', error);
+                showToast('❌ Gagal memulai voice recognition', 'error');
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+        }
+
+        function updateVoiceButtonRecording(recording) {
+            const voiceBtn = document.querySelector('.voice-btn');
+            
+            if (recording) {
+                voiceBtn.classList.add('recording');
+                voiceBtn.innerHTML = `
+                    <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+                        <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+                    </svg>
+                    <span class="voice-btn-text">🔴 Merekam... (Klik untuk Stop)</span>
+                `;
+            } else {
+                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = `
+                    <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+                        <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+                    </svg>
+                    <span class="voice-btn-text">Tekan Untuk Bersuara</span>
+                `;
+            }
+        }
+
+        async function sendTextToAPI(text) {
+            showLoading('Memproses text...');
+            
+            try {
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                
+                // Send to Laravel API for parsing
+                const response = await fetch(PARSE_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const result = await response.json();
+                
+                hideLoading();
+                
+                if (result.success) {
+                    // Auto-fill form with parsed data
+                    autoFillForm(result.data);
+                    
+                    // Show modal
+                    openModal();
+                    
+                    showToast(`✅ Terdeteksi: "${result.raw_text}"`, 'success');
+                } else {
+                    showToast(`❌ ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error('Error sending text:', error);
+                showToast('❌ Gagal memproses text. Silakan coba lagi.', 'error');
+            }
+        }
+
+        function autoFillForm(data) {
+            // Fill form fields
+            document.getElementById('jenis').value = data.jenis || '';
+            document.getElementById('kategori').value = data.kategori || '';
+            document.getElementById('jumlah').value = data.jumlah || '';
+            document.getElementById('keterangan').value = data.keterangan || '';
+        }
+
+        // Modal Functions
+        function openModal() {
+            document.getElementById('voiceModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('voiceModal').classList.remove('active');
+            document.getElementById('transactionForm').reset();
+        }
+
+        // Save Transaction
+        async function saveTransaction(event) {
+            event.preventDefault();
+            
+            showLoading('Menyimpan transaksi...');
+            
+            const formData = {
+                jenis: document.getElementById('jenis').value,
+                kategori: document.getElementById('kategori').value,
+                jumlah: parseFloat(document.getElementById('jumlah').value),
+                keterangan: document.getElementById('keterangan').value,
+                budget_id: null, // Optional for Laporan page
+                goal_id: null    // Optional for Laporan page
+            };
+            
+            try {
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                
+                // Send to Laravel API
+                const response = await fetch(LARAVEL_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                hideLoading();
+                
+                if (result.success) {
+                    closeModal();
+                    showToast('✅ Transaksi berhasil disimpan!', 'success');
+                    
+                    // Reload page after 1.5 seconds to show new data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast(`❌ ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error('Error saving transaction:', error);
+                showToast('❌ Gagal menyimpan transaksi', 'error');
+            }
+        }
+
+        // UI Helper Functions
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            // Set icon
+            toastIcon.textContent = type === 'success' ? '✅' : '❌';
+            
+            // Set message
+            toastMessage.textContent = message;
+            
+            // Set type
+            toast.className = `toast ${type} active`;
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 5000);
+        }
+
+        // ========================================
+        // LAPORAN FUNCTIONS
+        // ========================================
+
+        function loadLaporanData() {
+            const bulanDari = document.getElementById('bulanDari').value;
+            const tahunDari = document.getElementById('tahunDari').value;
+            const bulanSampai = document.getElementById('bulanSampai').value;
+            const tahunSampai = document.getElementById('tahunSampai').value;
+
+            // Validation
+            if (!bulanDari || !tahunDari || !bulanSampai || !tahunSampai) {
+                showToast('Mohon pilih periode lengkap (dari bulan/tahun sampai bulan/tahun)', 'error');
+                return;
+            }
+
+            // Show loading
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div><div style="margin-top: 15px;">Memuat data...</div></td></tr>';
+
+            // Build query params
+            const params = new URLSearchParams({
+                bulan_dari: bulanDari,
+                tahun_dari: tahunDari,
+                bulan_sampai: bulanSampai,
+                tahun_sampai: tahunSampai
+            });
+
+            // Fetch data
+            fetch(`/api/laporan/transactions?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderTable(data.data, data.summary, data.period);
+                    } else {
+                        showToast('Gagal memuat data laporan', 'error');
+                        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #e74c3c;">Gagal memuat data</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Terjadi kesalahan saat memuat data', 'error');
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #e74c3c;">Terjadi kesalahan</td></tr>';
+                });
+        }
+
+        function renderTable(transactions, summary, period) {
+            const tableBody = document.getElementById('tableBody');
+            const tableSummary = document.getElementById('tableSummary');
+            const periodInfo = document.getElementById('periodInfo');
+            const periodText = document.getElementById('periodText');
+
+            // Show period
+            if (period.start && period.end) {
+                periodText.textContent = `${period.start} - ${period.end}`;
+                periodInfo.style.display = 'block';
+            }
+
+            // Render rows
+            if (transactions.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">Tidak ada data untuk periode ini</td></tr>';
+                tableSummary.style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            transactions.forEach(transaction => {
+                const nominalColor = transaction.jenis === 'Pemasukan' ? '#2ecc71' : '#e74c3c';
+                const nominalSign = transaction.jenis === 'Pemasukan' ? '+' : '-';
+                
+                html += `
+                    <tr>
+                        <td>${transaction.tanggal}</td>
+                        <td>${transaction.kategori}</td>
+                        <td style="color: ${nominalColor};">${nominalSign} ${transaction.jumlah_formatted}</td>
+                        <td>${transaction.saldo_formatted}</td>
+                        <td>${transaction.keterangan}</td>
+                    </tr>
+                `;
+            });
+
+            tableBody.innerHTML = html;
+
+            // Show summary
+            document.getElementById('totalPemasukan').textContent = summary.total_pemasukan_formatted;
+            document.getElementById('totalPengeluaran').textContent = summary.total_pengeluaran_formatted;
+            document.getElementById('saldoAkhir').textContent = summary.saldo_akhir_formatted;
+            tableSummary.style.display = 'table-footer-group';
+        }
+
+        function exportToPdf() {
+            const bulanDari = document.getElementById('bulanDari').value;
+            const tahunDari = document.getElementById('tahunDari').value;
+            const bulanSampai = document.getElementById('bulanSampai').value;
+            const tahunSampai = document.getElementById('tahunSampai').value;
+
+            // Validation
+            if (!bulanDari || !tahunDari || !bulanSampai || !tahunSampai) {
+                showToast('Mohon pilih periode terlebih dahulu', 'error');
+                return;
+            }
+
+            // Build query params
+            const params = new URLSearchParams({
+                bulan_dari: bulanDari,
+                tahun_dari: tahunDari,
+                bulan_sampai: bulanSampai,
+                tahun_sampai: tahunSampai
+            });
+
+            // Show loading
+            showToast('Mengunduh laporan PDF...', 'success');
+
+            // Download PDF
+            window.location.href = `/api/laporan/export-pdf?${params}`;
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attach voice button event
+            const voiceBtn = document.querySelector('.voice-btn');
+            if (voiceBtn) {
+                voiceBtn.addEventListener('click', startVoiceRecording);
+            }
+            
+            // Attach search button event
+            const btnCari = document.getElementById('btnCari');
+            if (btnCari) {
+                btnCari.addEventListener('click', loadLaporanData);
+            }
+
+            // Attach download PDF button event
+            const btnDownloadPdf = document.getElementById('btnDownloadPdf');
+            if (btnDownloadPdf) {
+                btnDownloadPdf.addEventListener('click', exportToPdf);
+            }
+            
+            // Close modal on overlay click
+            document.getElementById('voiceModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

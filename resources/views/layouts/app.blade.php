@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Proyek Terapan')</title>
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -45,10 +46,12 @@
         .logo {
             width: 70px;
             height: 70px;
-            background: linear-gradient(180deg, #2A8576 42%, #1C5A50 82%);
             border-radius: 44px;
             margin-bottom: 40px;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .menu-item {
@@ -273,8 +276,8 @@
             white-space: nowrap;
         }
 
-        .chart-label-income { color: #00A311; }
-        .chart-label-expense { color: #ED6363; }
+        .chart-label-income { color: #FFFFFF; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .chart-label-expense { color: #FFFFFF; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
         .chart-legend { display: flex; gap: 30px; font-size: 16px; font-weight: 800; }
         .legend-item { display: flex; align-items: center; gap: 8px; }
@@ -392,33 +395,382 @@
             background: #DDD;
         }
 
+        /* Voice Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: #2C3E50;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E3F5FF;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            background: #F8FCFF;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #00456A;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 69, 106, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300456A' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 40px;
+        }
+
+        .form-group select:hover {
+            border-color: #6B9BD1;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #00456A;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #003855;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 69, 106, 0.3);
+        }
+
+        .btn-secondary {
+            background: #E3F5FF;
+            color: #00456A;
+            border: 1px solid #00456A;
+        }
+
+        .btn-secondary:hover {
+            background: #D0E9F5;
+        }
+
+        /* Loading Spinner */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Recording Animation */
+        .voice-btn.recording {
+            background: #ED6363;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(237, 99, 99, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(237, 99, 99, 0);
+            }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 3000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.active {
+            display: flex;
+        }
+
+        .toast.success {
+            border-left: 4px solid #00A311;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ED6363;
+        }
+
+        .toast-icon {
+            font-size: 24px;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            color: #2C3E50;
+        }
+
         @media (max-width: 1024px) { .bottom-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 768px) { .sidebar { width: 80px; padding: 15px 0; } .logo { width: 50px; height: 50px; } .menu-item span { font-size: 10px; } .main-content { padding: 15px; } .cards-grid { grid-template-columns: 1fr; } .transaction-item { grid-template-columns: 1fr; text-align: center; } .transaction-date, .transaction-amount { text-align: center; } .goal-form { max-width: 100%; width: 95%; } }
+        @media (max-width: 768px) { 
+            .sidebar { width: 80px; padding: 15px 0; } 
+            .logo { width: 50px; height: 50px; } 
+            .menu-item span { font-size: 10px; } 
+            .main-content { padding: 15px; } 
+            .cards-grid { grid-template-columns: 1fr; } 
+            .transaction-item { grid-template-columns: 1fr; text-align: center; } 
+            .transaction-date, .transaction-amount { text-align: center; } 
+            .goal-form { max-width: 100%; width: 95%; }
+            
+            /* Voice Button Mobile - Icon Only (Microphone) */
+            .voice-btn {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                padding: 0;
+                position: fixed;
+                top: auto;
+                bottom: 24px;
+                right: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 6px 20px rgba(0, 69, 106, 0.4);
+                z-index: 1000;
+                background: #00456A;
+            }
+
+            .voice-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 8px 24px rgba(0, 69, 106, 0.5);
+            }
+
+            .voice-btn svg {
+                width: 24px;
+                height: 30px;
+                margin: 0;
+            }
+
+            .voice-btn-text {
+                display: none !important;
+            }
+        }
+    /* Responsive Voice Button */
+    @media (max-width: 768px) {
+        .voice-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            padding: 0;
+            position: fixed;
+            top: auto;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 69, 106, 0.4);
+            z-index: 1000;
+            background: #00456A;
+        }
+
+        .voice-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(0, 69, 106, 0.5);
+        }
+
+        .voice-btn svg {
+            width: 24px;
+            height: 30px;
+            margin: 0;
+        }
+
+        .voice-btn-text {
+            display: none !important;
+        }
+    }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="sidebar">
-        <div class="logo"></div>
+        <div class="logo">
+            <img src="{{ asset('images/voica-logo.png') }}" alt="VOICA Logo" style="width: 100%; height: auto; object-fit: contain;">
+        </div>
 
-        <a href="{{ route('dashboard') }}" class="menu-item ajax-link">
+        <a href="{{ route('dashboard') }}" class="menu-item">
             <div class="menu-item-icon">🏠</div>
             <span>Dashboard</span>
         </a>
 
-        <a href="{{ route('budgeting') }}" class="menu-item ajax-link">
+        <a href="{{ route('budgeting') }}" class="menu-item">
             <div class="menu-item-icon">💰</div>
-            <span>Budgeting</span>
+            <span>Anggaran</span>
         </a>
 
-        <a href="{{ route('goals') }}" class="menu-item ajax-link">
+        <a href="{{ route('goals') }}" class="menu-item">
             <div class="menu-item-icon">🎯</div>
-            <span>Goals</span>
+            <span>Target</span>
         </a>
 
-        <a href="#" class="menu-item">
+        <a href="{{ route('laporan') }}" class="menu-item">
             <div class="menu-item-icon">📊</div>
             <span>Laporan</span>
+        </a>
+
+        <a href="{{ route('settings') }}" class="menu-item">
+            <div class="menu-item-icon">⚙️</div>
+            <span>Pengaturan</span>
         </a>
 
         <div class="menu-item" style="margin-top:auto; margin-bottom:20px;">
@@ -426,7 +778,7 @@
                 @csrf
                 <button type="submit" style="background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:8px; padding:0;">
                     <div class="menu-item-icon" style="background:#FFE4E4;">🚪</div>
-                    <span style="color:#F53003; font-size:12px; font-weight:600;">Logout</span>
+                    <span style="color:#F53003; font-size:12px; font-weight:600;">Keluar</span>
                 </button>
             </form>
         </div>
@@ -436,39 +788,10 @@
         @yield('main-content')
     </div>
 
-    <!-- Unified Goal Form (outside main-content so it persists across AJAX loads) -->
-    <div id="goal-form-container" class="goal-form-container" style="display: none;">
-        <div class="goal-form">
-            <h3 id="form-title">Tambah Goal Baru</h3>
-            <form id="goal-form" method="POST" action="{{ route('goals.store') }}">
-                @csrf
-                <input type="hidden" id="form-mode" value="add">
-                <input type="hidden" id="form-goal-id">
-                
-                <div class="form-group">
-                    <label for="namaGoal">Nama Goal</label>
-                    <input type="text" id="namaGoal" name="namaGoal" placeholder="Contoh: Dana Darurat" required>
-                </div>
-                <div class="form-group">
-                    <label for="targetNominal">Target Nominal</label>
-                    <input type="number" id="targetNominal" name="targetNominal" placeholder="Rp" required>
-                </div>
-                <div class="form-group">
-                    <label for="nominalBerjalan">Nominal Berjalan</label>
-                    <input type="number" id="nominalBerjalan" name="nominalBerjalan" placeholder="Rp" required>
-                </div>
-                <div class="form-group">
-                    <label for="tanggalTarget">Target Tanggal</label>
-                    <input type="date" id="tanggalTarget" name="tanggalTarget" required>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-save" id="form-submit-btn">Simpan</button>
-                    <button type="button" class="btn-cancel" id="form-cancel-btn">Batal</button>
-                </div>
-            </form>
-        </div>
-    </div>
+
 </div>
+
+
 
 <script>
 // AJAX navigation: fetch page content and replace .main-content, keep sidebar static

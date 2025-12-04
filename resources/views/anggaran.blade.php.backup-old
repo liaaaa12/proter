@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Budgeting - Anggaran</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #E3F5FF;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 100px;
+            background: white;
+            box-shadow: 1px 4px 5px rgba(0, 0, 0, 0.2);
+            border-right: 1px solid #D2C7C7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            justify-content: flex-start;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 44px;
+            margin-bottom: 40px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 26px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.05);
+        }
+
+        .menu-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: #E3F5FF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .menu-item span {
+            font-size: 18px;
+            font-weight: 750;
+            text-align: center;
+            color: #000;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            border: 1px solid #00456A;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-text h1 {
+            color: #2C3E50;
+            font-size: clamp(24px, 4vw, 40px);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header-text p {
+            color: #2C3E50;
+            font-size: clamp(14px, 2vw, 20px);
+        }
+
+        .voice-btn {
+            background: #00456A;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 100px;
+            border: 1px solid rgba(32, 56, 55, 0.5);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.3s;
+        }
+
+        .voice-btn:hover {
+            background: #003855;
+        }
+
+        /* Filter & Add Section */
+        .controls-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .period-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .period-filter label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2C3E50;
+        }
+
+        .period-filter input[type="month"] {
+            padding: 10px 20px;
+            border: 2px solid #00456A;
+            border-radius: 10px;
+            background: white;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            color: #2C3E50;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .period-filter input[type="month"]:focus {
+            outline: none;
+            border-color: #00456A;
+            box-shadow: 0 0 0 3px rgba(0, 69, 106, 0.1);
+        }
+
+        .add-budget-btn {
+            background: rgba(0, 69, 106, 0.7);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 100px;
+            border: 1px solid #00456A;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .add-budget-btn:hover {
+            background: #00456A;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 69, 106, 0.3);
+        }
+
+        /* Budget Cards Grid */
+        .budget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .budget-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #5B9E9D;
+        }
+
+        .budget-header {
+            padding: 15px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .budget-header.color-1 { background: #6B9BD1; }
+        .budget-header.color-2 { background: #D1786B; }
+        .budget-header.color-3 { background: #D19E6B; }
+        .budget-header.color-4 { background: #6BC1D1; }
+        .budget-header.color-5 { background: #9E6BD1; }
+
+        .budget-icon {
+            width: 45px;
+            height: 45px;
+            background: #DDE6E6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .budget-title {
+            flex: 1;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .budget-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .budget-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            font-size: 16px;
+        }
+
+        .budget-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .budget-body {
+            padding: 20px 25px;
+        }
+
+        .budget-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .budget-label {
+            opacity: 0.7;
+            font-weight: 600;
+        }
+
+        .budget-value {
+            opacity: 0.7;
+            font-weight: 600;
+        }
+
+        .budget-progress {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background: #E0E0E0;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #6B9BD1;
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 14px;
+            opacity: 0.7;
+            font-weight: 600;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px dashed #00456A;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: #2C3E50;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: #2C3E50;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2C3E50;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E3F5FF;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            background: #F8FCFF;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #00456A;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 69, 106, 0.1);
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #00456A;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #003855;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 69, 106, 0.3);
+        }
+
+        .btn-secondary {
+            background: #E3F5FF;
+            color: #00456A;
+            border: 1px solid #00456A;
+        }
+
+        .btn-secondary:hover {
+            background: #D0E9F5;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 3000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.active {
+            display: flex;
+        }
+
+        .toast.success {
+            border-left: 4px solid #00A311;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ED6363;
+        }
+
+        .toast-icon {
+            font-size: 24px;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            color: #2C3E50;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 80px;
+                padding: 15px 0;
+            }
+
+            .logo {
+                width: 50px;
+                height: 50px;
+            }
+
+            .menu-item span {
+                font-size: 10px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            .budget-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .period-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .period-filter select {
+                width: 100%;
+            }
+
+            /* Voice Button Mobile */
+            .voice-btn {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                padding: 0;
+                position: fixed;
+                top: auto;
+                bottom: 24px;
+                right: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 6px 20px rgba(0, 69, 106, 0.4);
+                z-index: 1000;
+            }
+
+            .voice-btn svg {
+                width: 24px;
+                height: 30px;
+            }
+
+            .voice-btn-text {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="{{ asset('images/voica-logo.png') }}" alt="VOICA Logo" style="width: 100%; height: auto; object-fit: contain;">
+            </div>
+
+            <a href="{{ route('dashboard') }}" class="menu-item">
+                <div class="menu-item-icon">🏠</div>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ route('budgeting') }}" class="menu-item">
+                <div class="menu-item-icon">💰</div>
+                <span>Anggaran</span>
+            </a>
+
+            <div class="menu-item">
+                <div class="menu-item-icon">🎯</div>
+                <span>Target</span>
+            </div>
+
+            <a href="{{ route('laporan') }}" class="menu-item">
+                <div class="menu-item-icon">📊</div>
+                <span>Laporan</span>
+            </a>
+
+            <a href="{{ route('settings') }}" class="menu-item">
+                <div class="menu-item-icon">⚙️</div>
+                <span>Pengaturan</span>
+            </a>
+
+            <div class="menu-item" style="margin-top: auto; margin-bottom: 20px;">
+                <form method="POST" action="{{ route('logout') }}" style="display: contents;">
+                    @csrf
+                    <button type="submit" style="background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0;">
+                        <div class="menu-item-icon" style="background:#FFE4E4;">🚪</div>
+                        <span style="color: #F53003; font-size: 18px; font-weight: 750;">Keluar</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-text">
+                    <h1>Budgeting</h1>
+                    <p>💡 Atur anggaran bulanan Anda agar keuangan lebih terkontrol!</p>
+                </div>
+                <button class="voice-btn">
+                    <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+                        <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+                    </svg>
+                    <span class="voice-btn-text">Tekan Untuk Bersuara</span>
+                </button>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <div class="period-filter">
+                    <label>📅 Pilih Periode:</label>
+                    <input type="month" id="periodFilter" value="{{ $periode }}" onchange="window.location.href='?periode=' + this.value">
+                </div>
+                <button class="add-budget-btn" onclick="openAddModal()">+ Tambah Anggaran</button>
+            </div>
+
+            <!-- Budget Cards -->
+            @if(count($budgetsWithProgress) > 0)
+                <div class="budget-grid" id="budgetGrid">
+                    @foreach($budgetsWithProgress as $index => $budget)
+                        <div class="budget-card">
+                            <div class="budget-header color-{{ ($index % 5) + 1 }}">
+                                <div class="budget-icon">{{ $budget['icon'] }}</div>
+                                <div class="budget-title">{{ $budget['namaBudget'] }}</div>
+                                <div class="budget-actions">
+                                    <button class="budget-action-btn" onclick="openEditModal({{ json_encode($budget) }})" title="Edit Anggaran">✏️</button>
+                                    <button class="budget-action-btn" onclick="deleteBudget({{ $budget['id'] }})" title="Hapus Anggaran">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="budget-body">
+                                <div class="budget-row">
+                                    <span class="budget-label">💸 Terpakai</span>
+                                    <span class="budget-value">{{ $budget['terpakai_formatted'] }}</span>
+                                </div>
+                                <div class="budget-row">
+                                    <span class="budget-label">💰 Anggaran</span>
+                                    <span class="budget-value">{{ $budget['jumlah_formatted'] }}</span>
+                                </div>
+                                <div class="budget-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: {{ min($budget['persentase'], 100) }}%;"></div>
+                                    </div>
+                                    <div class="progress-info">
+                                        <span>{{ $budget['persentase'] }}% Terpakai</span>
+                                        <span>Sisa {{ $budget['sisa_formatted'] }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-state">
+                    <div class="empty-state-icon">💰</div>
+                    <h3>Belum Ada Anggaran</h3>
+                    <p>Mulai atur keuangan Anda dengan menambahkan anggaran bulanan!</p>
+                    <button class="add-budget-btn" onclick="openAddModal()">+ Tambah Anggaran Pertama</button>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Add/Edit Budget Modal -->
+    <div class="modal-overlay" id="budgetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Anggaran Baru</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form id="budgetForm" onsubmit="saveBudget(event)">
+                <input type="hidden" id="budgetId" value="">
+                
+                <div class="form-group">
+                    <label for="namaBudget">📝 Nama Anggaran *</label>
+                    <input type="text" id="namaBudget" name="namaBudget" placeholder="Contoh: Belanja Bulanan" required>
+                    <div class="helper-text">Berikan nama yang mudah diingat untuk anggaran ini</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="kategori">🏷️ Kategori *</label>
+                    <select id="kategori" name="kategori" required>
+                        <option value="">Pilih Kategori</option>
+                        <option value="Makanan">🍔 Makanan</option>
+                        <option value="Transportasi">🚗 Transportasi</option>
+                        <option value="Hiburan">🎬 Hiburan</option>
+                        <option value="Belanja">🛍️ Belanja</option>
+                        <option value="Jalan-Jalan">✈️ Jalan-Jalan</option>
+                        <option value="Kesehatan">🏥 Kesehatan</option>
+                        <option value="Pendidikan">📚 Pendidikan</option>
+                        <option value="Tagihan">💳 Tagihan</option>
+                        <option value="Lainnya">💰 Lainnya</option>
+                    </select>
+                    <div class="helper-text">Icon akan otomatis muncul sesuai kategori yang dipilih</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="jumlah">💵 Jumlah Anggaran (Rp) *</label>
+                    <input type="number" id="jumlah" name="jumlah" placeholder="0" required min="0" step="1000">
+                    <div class="helper-text">Masukkan total anggaran untuk kategori ini</div>
+                </div>
+
+                <div class="form-group" id="periodeGroup">
+                    <label for="periode">📅 Periode (Bulan & Tahun) *</label>
+                    <input type="month" id="periode" name="periode" value="{{ $periode }}" required>
+                    <div class="helper-text">Pilih bulan dan tahun untuk anggaran ini. Contoh: Desember 2025</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">💾 Simpan Anggaran</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loadingText">Memproses...</div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-icon" id="toastIcon"></div>
+        <div class="toast-message" id="toastMessage"></div>
+    </div>
+
+    <script>
+        let isEditMode = false;
+
+        // Open Add Modal
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Tambah Anggaran Baru';
+            document.getElementById('budgetForm').reset();
+            document.getElementById('budgetId').value = '';
+            document.getElementById('periodeGroup').style.display = 'block';
+            document.getElementById('budgetModal').classList.add('active');
+        }
+
+        // Open Edit Modal
+        function openEditModal(budget) {
+            isEditMode = true;
+            document.getElementById('modalTitle').textContent = 'Edit Anggaran';
+            document.getElementById('budgetId').value = budget.id;
+            document.getElementById('namaBudget').value = budget.namaBudget;
+            document.getElementById('kategori').value = budget.kategori;
+            document.getElementById('jumlah').value = budget.jumlah;
+            document.getElementById('periode').value = budget.periode;
+            document.getElementById('periodeGroup').style.display = 'none'; // Hide periode saat edit
+            document.getElementById('budgetModal').classList.add('active');
+        }
+
+        // Close Modal
+        function closeModal() {
+            document.getElementById('budgetModal').classList.remove('active');
+        }
+
+        // Save Budget (Add or Edit)
+        async function saveBudget(event) {
+            event.preventDefault();
+
+            const budgetId = document.getElementById('budgetId').value;
+            const formData = {
+                namaBudget: document.getElementById('namaBudget').value,
+                kategori: document.getElementById('kategori').value,
+                jumlah: parseFloat(document.getElementById('jumlah').value),
+                periode: document.getElementById('periode').value,
+            };
+
+            // Show loading
+            document.getElementById('loadingText').textContent = isEditMode ? 'Mengupdate anggaran...' : 'Menambahkan anggaran...';
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                const url = isEditMode ? `/api/budget/${budgetId}` : '/api/budget';
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                // Hide loading
+                document.getElementById('loadingOverlay').classList.remove('active');
+
+                if (result.success) {
+                    showToast('✅ ' + result.message, 'success');
+                    closeModal();
+                    
+                    // Reload page after 1 second
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                console.error('Error:', error);
+                showToast('❌ Terjadi kesalahan. Silakan coba lagi.', 'error');
+            }
+        }
+
+        // Delete Budget
+        async function deleteBudget(budgetId) {
+            if (!confirm('⚠️ Apakah Anda yakin ingin menghapus anggaran ini?')) {
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingText').textContent = 'Menghapus anggaran...';
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                const response = await fetch(`/api/budget/${budgetId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                // Hide loading
+                document.getElementById('loadingOverlay').classList.remove('active');
+
+                if (result.success) {
+                    showToast('✅ ' + result.message, 'success');
+                    
+                    // Reload page after 1 second
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                console.error('Error:', error);
+                showToast('❌ Terjadi kesalahan. Silakan coba lagi.', 'error');
+            }
+        }
+
+        // Toast notification function
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            // Set icon
+            toastIcon.textContent = type === 'success' ? '✅' : '❌';
+            
+            // Set message
+            toastMessage.textContent = message;
+            
+            // Set type
+            toast.className = `toast ${type} active`;
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 5000);
+        }
+
+        // Close modal on overlay click
+        document.getElementById('budgetModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

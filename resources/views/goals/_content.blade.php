@@ -9,37 +9,36 @@
 <!-- Goals Header -->
 <div class="header goals-header">
     <div class="header-text">
-        <h1>Goals 🚀</h1>
-        <p>Yang penting bukan nominalnya, tapi niatnya. Asal jangan lupa isi lagi, bukan tarik lagi !</p>
+        <h1>Target Keuangan</h1>
+        <p>Wujudkan impianmu satu per satu</p>
     </div>
-    <button class="voice-btn">
-        <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
-            <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
-        </svg>
-        Tekan Untuk Bersuara
+    <button class="btn-add-goal" onclick="openGoalModal()">
+        + Tambah Target
     </button>
 </div>
 
 <!-- Add Goal Button -->
-<div class="goals-actions">
+<div class="goals-actions" style="display: none;">
     <button class="btn-add-goal" id="btn-add-goal">+ Tambah Target</button>
 </div>
 
 <!-- Goals List -->
 <div class="goals-list">
-    @forelse($goalsData as $goal)
-        <div class="goal-card" data-goal-id="{{ $goal->id }}">
-            <div class="goal-header">
-                <div class="goal-header-left">
-                    <div class="goal-icon">🎯</div>
-                    <div>
-                        <h3>{{ $goal->namaGoal }}</h3>
-                        <p class="goal-days">{{ $goal->tanggalTarget }}</p>
-                    </div>
+    @forelse($goalsData as $index => $goal)
+        <div class="goal-card" data-goal-id="{{ $goal->id }}" onclick="showHistory({{ $goal->id }})" style="cursor: pointer;">
+            <div class="goal-header color-{{ ($index % 5) + 1 }}">
+                <div class="goal-icon">🎯</div>
+                <div class="goal-title">
+                    <h3>{{ $goal->namaGoal }}</h3>
+                    @php
+                        $targetDate = \Carbon\Carbon::parse($goal->tanggalTarget);
+                        $daysText = $targetDate->isPast() ? 'Tercapai / Lewat' : $targetDate->diffForHumans(now(), true) . ' lagi';
+                    @endphp
+                    <p class="goal-days">{{ $daysText }} ({{ $targetDate->format('d M Y') }})</p>
                 </div>
                 <div class="goal-actions">
-                    <button class="goal-btn-edit" title="Edit" onclick="editGoal({{ $goal->id }}, '{{ $goal->namaGoal }}', {{ $goal->targetNominal }}, {{ $goal->nominalBerjalan }}, '{{ $goal->tanggalTarget }}')">✏️</button>
-                    <button class="goal-btn-delete" title="Delete" onclick="deleteGoal({{ $goal->id }})">🗑️</button>
+                    <button class="goal-btn-edit" title="Edit" onclick="event.stopPropagation(); editGoal({{ $goal->id }}, '{{ $goal->namaGoal }}', {{ $goal->targetNominal }}, {{ $goal->nominalBerjalan }}, '{{ $goal->tanggalTarget }}')">✏️</button>
+                    <button class="goal-btn-delete" title="Delete" onclick="event.stopPropagation(); deleteGoal({{ $goal->id }})">🗑️</button>
                 </div>
             </div>
             <div class="goal-body">
@@ -62,7 +61,12 @@
             </div>
         </div>
     @empty
-        <p>Belum ada goal.</p>
+        <div class="empty-state">
+            <div class="empty-state-icon">🎯</div>
+            <h3>Belum Ada Goals</h3>
+            <p>Mulai atur target keuangan Anda untuk masa depan yang lebih baik!</p>
+            <button class="btn-add-goal" style="margin-top: 10px;" onclick="document.getElementById('btn-add-goal').click()">+ Tambah Target Pertama</button>
+        </div>
     @endforelse
 </div>
 
@@ -85,7 +89,7 @@
             </div>
             <div class="form-group">
                 <label for="nominalBerjalan">Nominal Berjalan</label>
-                <input type="number" id="nominalBerjalan" name="nominalBerjalan" placeholder="Rp" required>
+                <input type="number" id="nominalBerjalan" name="nominalBerjalan" placeholder="Rp (Opsional, default 0)">
             </div>
             <div class="form-group">
                 <label for="tanggalTarget">Target Tanggal</label>
@@ -98,6 +102,22 @@
         </form>
     </div>
 </div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 id="historyModalTitle">Riwayat Transaksi</h2>
+            <button class="close-btn" onclick="closeHistoryModal()">&times;</button>
+        </div>
+        <div class="history-list" id="historyList" style="max-height: 400px; overflow-y: auto;">
+            <!-- Transaksi akan dimuat di sini -->
+            <div style="text-align:center; padding:20px;">Memuat data...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Voice Modal, Loading, Toast removed (moved to layout) -->
 
 <style>
     .goals-header {
@@ -133,19 +153,21 @@
     }
 
     .btn-add-goal {
-        background: #2A8576;
+        background: rgba(0, 69, 106, 0.7);
         color: white;
         padding: 12px 28px;
         border-radius: 100px;
-        border: none;
+        border: 1px solid #00456A;
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: all 0.3s;
     }
 
     .btn-add-goal:hover {
-        background: #1C5A50;
+        background: #00456A;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 69, 106, 0.3);
     }
 
     .goals-list {
@@ -163,35 +185,47 @@
     }
 
     .goal-header {
-        background: linear-gradient(135deg, #2A8576 0%, #1C5A50 100%);
-        color: white;
         padding: 15px 20px;
+        color: white;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
     }
 
-    .goal-header-left {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
+    .goal-header.color-1 { background: #6B9BD1; }
+    .goal-header.color-2 { background: #D1786B; }
+    .goal-header.color-3 { background: #D19E6B; }
+    .goal-header.color-4 { background: #6BC1D1; }
+    .goal-header.color-5 { background: #9E6BD1; }
 
     .goal-icon {
-        width: 50px;
-        height: 50px;
-        background: rgba(255, 255, 255, 0.2);
+        width: 45px;
+        height: 45px;
+        background: #DDE6E6;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 28px;
+        font-size: 24px;
+        margin-right: 15px;
+        flex-shrink: 0;
     }
 
-    .goal-header-left h3 {
+    .goal-title {
+        flex: 1;
+    }
+
+    .goal-title h3 {
         font-size: 20px;
-        font-weight: 700;
+        font-weight: 600;
         margin: 0;
+    }
+
+    .goal-days {
+        font-size: 13px;
+        opacity: 0.9;
+        margin: 2px 0 0 0;
+        font-weight: 400;
     }
 
     .goal-days {
@@ -270,7 +304,7 @@
 
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #6B9BD1 0%, #2A8576 100%);
+        background: #6B9BD1;
         transition: width 0.3s ease;
     }
 
@@ -397,6 +431,32 @@
             width: 95%;
         }
     }
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 10px;
+        border: 2px dashed #00456A;
+        margin-top: 20px;
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        color: #2C3E50;
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: #666;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
 </style>
 
 <script>
@@ -501,23 +561,42 @@
         const goalsList = document.querySelector('.goals-list');
         if (!goalsList) return;
 
+        // Remove empty state if exists
+        const emptyState = goalsList.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
         const percentage = goal.targetNominal > 0 ? Math.round((goal.nominalBerjalan / goal.targetNominal) * 100) : 0;
+        
+        // Calculate color index based on current number of cards
+        const cardCount = goalsList.querySelectorAll('.goal-card').length;
+        const colorIndex = (cardCount % 5) + 1;
 
         const newCard = document.createElement('div');
         newCard.className = 'goal-card';
         newCard.setAttribute('data-goal-id', goal.id);
+        newCard.setAttribute('onclick', `showHistory(${goal.id})`);
+        newCard.style.cursor = 'pointer';
+
+        // Calculate days left
+        const targetDate = new Date(goal.tanggalTarget);
+        const today = new Date();
+        const diffTime = targetDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        let daysText = diffDays > 0 ? diffDays + ' hari lagi' : 'Tercapai / Lewat';
+        const dateFormatted = targetDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
         newCard.innerHTML = `
-            <div class="goal-header">
-                <div class="goal-header-left">
-                    <div class="goal-icon">🎯</div>
-                    <div>
-                        <h3>${goal.namaGoal}</h3>
-                        <p class="goal-days">${goal.tanggalTarget}</p>
-                    </div>
+            <div class="goal-header color-${colorIndex}">
+                <div class="goal-icon">🎯</div>
+                <div class="goal-title">
+                    <h3>${goal.namaGoal}</h3>
+                    <p class="goal-days">${daysText} (${dateFormatted})</p>
                 </div>
                 <div class="goal-actions">
-                    <button class="goal-btn-edit" title="Edit" onclick="editGoal(${goal.id}, '${goal.namaGoal}', ${goal.targetNominal}, ${goal.nominalBerjalan}, '${goal.tanggalTarget}')">✏️</button>
-                    <button class="goal-btn-delete" title="Delete" onclick="deleteGoal(${goal.id})">🗑️</button>
+                    <button class="goal-btn-edit" title="Edit" onclick="event.stopPropagation(); editGoal(${goal.id}, '${goal.namaGoal}', ${goal.targetNominal}, ${goal.nominalBerjalan}, '${goal.tanggalTarget}')">✏️</button>
+                    <button class="goal-btn-delete" title="Delete" onclick="event.stopPropagation(); deleteGoal(${goal.id})">🗑️</button>
                 </div>
             </div>
             <div class="goal-body">
@@ -537,7 +616,8 @@
             </div>
         `;
 
-        goalsList.appendChild(newCard);
+        // Insert at the beginning (since we order by desc)
+        goalsList.insertBefore(newCard, goalsList.firstChild);
     }
 
     // ===== EVENT HANDLERS WITH EVENT DELEGATION =====
@@ -593,7 +673,10 @@
         data.append('_token', document.querySelector('#goal-form [name="_token"]').value);
         data.append('namaGoal', document.getElementById('namaGoal').value);
         data.append('targetNominal', document.getElementById('targetNominal').value);
-        data.append('nominalBerjalan', document.getElementById('nominalBerjalan').value);
+        
+        const nominalBerjalan = document.getElementById('nominalBerjalan').value;
+        data.append('nominalBerjalan', nominalBerjalan === '' ? '0' : nominalBerjalan);
+        
         data.append('tanggalTarget', document.getElementById('tanggalTarget').value);
 
         fetch(url, {
@@ -656,4 +739,63 @@
             });
         });
     });
+</script>
+
+<script>
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const historyModal = document.getElementById('historyModal');
+        if (historyModal) {
+            historyModal.addEventListener('click', function(e) {
+                if (e.target === this) closeHistoryModal();
+            });
+        }
+    });
+
+    // History Functions
+    function showHistory(goalId) {
+        const modal = document.getElementById('historyModal');
+        const list = document.getElementById('historyList');
+        const title = document.getElementById('historyModalTitle');
+        
+        modal.classList.add('active');
+        list.innerHTML = '<div style="text-align:center; padding:20px;">Memuat data...</div>';
+        
+        fetch(`/api/goals/${goalId}/transactions`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    title.textContent = `Riwayat: ${data.budget_name}`;
+                    if(data.transactions.length === 0) {
+                        list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Belum ada transaksi untuk goal ini.</div>';
+                    } else {
+                        let html = '';
+                        data.transactions.forEach(trx => {
+                            const date = new Date(trx.tanggal).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
+                            const amount = new Intl.NumberFormat('id-ID').format(trx.jumlah);
+                            html += `
+                                <div class="transaction-item" style="margin-bottom:10px; border-left: 4px solid #6B9BD1; background: #F0F7FF; padding: 10px; border-radius: 5px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <div class="transaction-name" style="font-weight:600;">${trx.keterangan || 'Tabungan'}</div>
+                                        <div class="transaction-amount income" style="color:#00A311; font-weight:bold;">+ Rp${amount}</div>
+                                    </div>
+                                    <div class="transaction-date" style="font-size:12px; color:#888; margin-top:4px;">${date}</div>
+                                </div>
+                            `;
+                        });
+                        list.innerHTML = html;
+                    }
+                } else {
+                    list.innerHTML = '<div style="color:red; text-align:center;">Gagal memuat data.</div>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                list.innerHTML = '<div style="color:red; text-align:center;">Terjadi kesalahan.</div>';
+            });
+    }
+
+    function closeHistoryModal() {
+        document.getElementById('historyModal').classList.remove('active');
+    }
 </script>

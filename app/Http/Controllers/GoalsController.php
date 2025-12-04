@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Goal;
+use Illuminate\Support\Facades\Auth;
 
 class GoalsController extends Controller
 {
     public function index(Request $request)
     {
-        $goals = Goal::orderBy('created_at', 'desc')->get();
+        $goals = Goal::where('user_id', Auth::id())->orderBy('created_at', 'desc')->get();
 
         // If request is AJAX, return only the inner content to swap into the page
         if ($request->ajax() || $request->wantsJson()) {
@@ -30,6 +31,7 @@ class GoalsController extends Controller
         ]);
 
         $data['nominalBerjalan'] = $data['nominalBerjalan'] ?? 0;
+        $data['user_id'] = Auth::id();
 
         // Check if nominalBerjalan >= targetNominal (goal already achieved)
         if ($data['nominalBerjalan'] >= $data['targetNominal']) {
@@ -43,8 +45,9 @@ class GoalsController extends Controller
             return redirect()->route('goals')->with('error', 'Goal sudah tercapai, tidak perlu disimpan lagi.');
         }
 
-        // Check if identical goal already exists (same name on same date)
-        $existingGoal = Goal::where('namaGoal', $data['namaGoal'])
+        // Check if identical goal already exists (same name on same date) for this user
+        $existingGoal = Goal::where('user_id', Auth::id())
+            ->where('namaGoal', $data['namaGoal'])
             ->whereDate('tanggalTarget', $data['tanggalTarget'])
             ->first();
 
@@ -74,7 +77,7 @@ class GoalsController extends Controller
 
     public function update(Request $request, $id)
     {
-        $goal = Goal::findOrFail($id);
+        $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
 
         $data = $request->validate([
             'namaGoal' => ['required', 'string', 'max:255'],
@@ -100,7 +103,7 @@ class GoalsController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $goal = Goal::findOrFail($id);
+        $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
         $goal->delete();
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -112,5 +115,29 @@ class GoalsController extends Controller
         }
 
         return redirect()->route('goals')->with('status', 'Goal berhasil dihapus');
+    }
+
+    public function getTransactions($id)
+    {
+        $user = Auth::id();
+        $goal = Goal::where('user_id', $user)->findOrFail($id);
+
+        // Mencoba mengambil transaksi berdasarkan goal_id
+        // Menggunakan try-catch untuk antisipasi jika kolom goal_id belum ada
+        try {
+            $transactions = \Illuminate\Support\Facades\DB::table('transaction')
+                ->where('user_id', $user)
+                ->where('goal_id', $id)
+                ->orderBy('tanggal', 'desc')
+                ->get();
+        } catch (\Exception $e) {
+            $transactions = [];
+        }
+
+        return response()->json([
+            'success' => true,
+            'transactions' => $transactions,
+            'budget_name' => $goal->namaGoal
+        ]);
     }
 }

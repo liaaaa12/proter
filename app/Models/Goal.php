@@ -16,5 +16,6 @@ class Goal extends Model
         'targetNominal',
         'nominalBerjalan',
         'tanggalTarget',
+        'user_id',
     ];
 }
