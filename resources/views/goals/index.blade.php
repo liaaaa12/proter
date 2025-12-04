@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan')
+@section('title', 'Goals')
 
 @section('main-content')
-    @include('laporan._content')
+    @include('goals._content')
 @endsection

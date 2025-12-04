@@ -31,6 +31,8 @@ class VoiceTransactionController extends Controller
 
             // 1. Simpan transaksi ke database
             $transactionId = DB::table('transaction')->insertGetId([
+                'user_id' => auth()->id(),
+                'tanggal' => now()->format('Y-m-d'), // Tanggal hari ini
                 'jenis' => $validated['jenis'],
                 'kategori' => $validated['kategori'],
                 'jumlah' => $validated['jumlah'],
@@ -119,6 +121,7 @@ class VoiceTransactionController extends Controller
     {
         try {
             $budgets = DB::table('budget')
+                ->where('user_id', auth()->id())
                 ->select('id', 'namaBudget', 'kategori', 'jumlah', 'jumlahBerjalan')
                 ->get();
 
@@ -146,6 +149,7 @@ class VoiceTransactionController extends Controller
     {
         try {
             $goals = DB::table('goals')
+                ->where('user_id', auth()->id())
                 ->select('id', 'namaGoal', 'targetNominal', 'nominalBerjalan', 'tanggalTarget')
                 ->get();
 
@@ -174,46 +178,97 @@ class VoiceTransactionController extends Controller
     public function parseVoiceText(Request $request)
     {
         try {
-            // Validasi input
-            $validated = $request->validate([
-                'text' => 'required|string'
-            ]);
-
-            $text = $validated['text'];
-            Log::info("Parsing voice text: {$text}");
-
-            // Parse menggunakan NLPParserService
-            $parser = new \App\Services\NLPParserService();
-            $result = $parser->parse($text);
-
-            if (!$result['success']) {
-                return response()->json([
-                    'success' => false,
-                    'error' => $result['error'],
-                    'raw_text' => $text
-                ], 400);
+            $text = $request->input('text');
+            if (empty($text)) {
+                return response()->json(['success' => false, 'message' => 'Teks kosong'], 400);
             }
 
-            // Return hasil parsing
+            $lowerText = strtolower($text);
+            $data = [
+                'jenis' => 'Pengeluaran', // Default
+                'kategori' => 'Lainnya',
+                'jumlah' => 0,
+                'keterangan' => ucfirst($text),
+                'budget_allocation' => null, // Default to null
+                'goal_allocation' => null    // Default to null
+            ];
+
+            // 1. Deteksi Jumlah (Angka)
+            // Mencari pola angka, bisa diikuti "ribu", "rb", "k", "juta", "jt"
+            // Contoh: "50000", "50.000", "50 ribu", "50k", "1.5 juta"
+            if (preg_match('/(\d+(?:[\.,]\d+)*)\s*(ribu|juta|rb|jt|k|m)?/i', $lowerText, $matches)) {
+                // Bersihkan angka dari titik/koma ribuan (ambil digit dan titik desimal jika ada)
+                // Asumsi format Indonesia: titik = ribuan, koma = desimal.
+                // Tapi speech-to-text kadang tidak konsisten.
+                // Pendekatan aman: ambil semua digit.
+                
+                $modifier = strtolower($matches[2] ?? '');
+                $baseNumber = 0;
+
+                if ($modifier) {
+                    // Jika ada modifier, parsing angka dengan hati-hati (misal "1.5" atau "1,5")
+                    $cleanNumStr = str_replace(',', '.', $matches[1]); // Ubah koma jadi titik desimal standar
+                    $baseNumber = floatval($cleanNumStr);
+                } else {
+                    // Jika tidak ada modifier, anggap integer murni (hapus non-digit)
+                    $baseNumber = floatval(preg_replace('/[^0-9]/', '', $matches[1]));
+                }
+
+                // Kalikan sesuai modifier
+                if (in_array($modifier, ['ribu', 'rb', 'k'])) {
+                    $baseNumber *= 1000;
+                } elseif (in_array($modifier, ['juta', 'jt', 'm'])) {
+                    $baseNumber *= 1000000;
+                }
+                
+                $data['jumlah'] = $baseNumber;
+            }
+
+            // 2. Deteksi Jenis
+            $pemasukanKeywords = ['dapat', 'terima', 'gaji', 'masuk', 'jual', 'income', 'tunjangan', 'bonus', 'thr'];
+            foreach ($pemasukanKeywords as $keyword) {
+                if (strpos($lowerText, $keyword) !== false) {
+                    $data['jenis'] = 'Pemasukan';
+                    break;
+                }
+            }
+
+            // 3. Deteksi Kategori
+            $kategoriMap = [
+                'Makanan' => ['makan', 'minum', 'nasi', 'kopi', 'snack', 'jajan', 'warteg', 'restoran', 'cafe', 'roti', 'mie', 'bakso'],
+                'Transport' => ['bensin', 'parkir', 'grab', 'gojek', 'tol', 'angkot', 'kereta', 'bus', 'ojek', 'taksi', 'uber'],
+                'Belanja' => ['beli', 'belanja', 'supermarket', 'indomaret', 'alfamart', 'pasar', 'mall', 'shopee', 'tokopedia', 'baju', 'celana'],
+                'Hiburan' => ['nonton', 'bioskop', 'game', 'main', 'liburan', 'wisata', 'jalan-jalan', 'spotify', 'netflix'],
+                'Tagihan' => ['listrik', 'air', 'internet', 'wifi', 'pulsa', 'paket data', 'pln', 'pdam', 'bpjs', 'asuransi'],
+                'Kesehatan' => ['obat', 'dokter', 'rumah sakit', 'klinik', 'vitamin', 'masker'],
+                'Pendidikan' => ['buku', 'sekolah', 'kursus', 'kuliah', 'spp', 'les'],
+                'Sedekah' => ['sedekah', 'infaq', 'zakat', 'donasi', 'sumbangan']
+            ];
+
+            foreach ($kategoriMap as $kategori => $keywords) {
+                foreach ($keywords as $keyword) {
+                    // Cek exact word match agar "makan" tidak match "makanan" (eh, gapapa sih)
+                    // Tapi "beli" (Belanja) jangan sampai match "beli makan" (Makanan).
+                    // Prioritas kategori di atas sudah cukup baik.
+                    if (strpos($lowerText, $keyword) !== false) {
+                        $data['kategori'] = $kategori;
+                        break 2; // Break both loops
+                    }
+                }
+            }
+            
+            // Jika jenis Pemasukan tapi kategori masih Lainnya/Default, coba tebak
+            if ($data['jenis'] == 'Pemasukan' && $data['kategori'] == 'Lainnya') {
+                if (strpos($lowerText, 'gaji') !== false) $data['kategori'] = 'Gaji';
+                elseif (strpos($lowerText, 'bonus') !== false) $data['kategori'] = 'Bonus';
+                elseif (strpos($lowerText, 'jual') !== false) $data['kategori'] = 'Penjualan';
+            }
+
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'jenis' => $result['jenis'],
-                    'kategori' => $result['kategori'],
-                    'jumlah' => $result['jumlah'],
-                    'keterangan' => $result['keterangan'],
-                    'budget_allocation' => $result['budget_allocation'],
-                    'goal_allocation' => $result['goal_allocation']
-                ],
+                'data' => $data,
                 'raw_text' => $text
-            ], 200);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Error parsing voice text: ' . $e->getMessage());

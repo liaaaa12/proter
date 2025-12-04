@@ -13,13 +13,17 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        $userId = Auth::id();
+        
         // Get total pemasukan
         $totalPemasukan = DB::table('transaction')
+            ->where('user_id', $userId)
             ->where('jenis', 'Pemasukan')
             ->sum('jumlah');
 
         // Get total pengeluaran
         $totalPengeluaran = DB::table('transaction')
+            ->where('user_id', $userId)
             ->where('jenis', 'Pengeluaran')
             ->sum('jumlah');
 
@@ -28,6 +32,7 @@ class DashboardController extends Controller
 
         // Get first goal (target)
         $goal = DB::table('goals')
+            ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -39,15 +44,20 @@ class DashboardController extends Controller
 
         // Get recent transactions (5 latest)
         $recentTransactions = DB::table('transaction')
+            ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
         // Get all budgets for dropdown
-        $budgets = DB::table('budget')->get();
+        $budgets = DB::table('budget')
+            ->where('user_id', $userId)
+            ->get();
 
         // Get all goals for dropdown
-        $goals = DB::table('goals')->get();
+        $goals = DB::table('goals')
+            ->where('user_id', $userId)
+            ->get();
 
         return view('dashboard', compact(
             'saldo',

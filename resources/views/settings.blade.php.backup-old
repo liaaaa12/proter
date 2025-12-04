@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Pengaturan Akun - VOICA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #E3F5FF;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar - Same as dashboard */
+        .sidebar {
+            width: 100px;
+            background: white;
+            box-shadow: 1px 4px 5px rgba(0, 0, 0, 0.2);
+            border-right: 1px solid #D2C7C7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            justify-content: flex-start;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 44px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 26px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.05);
+        }
+
+        .menu-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: #E3F5FF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .menu-item span {
+            font-size: 18px;
+            font-weight: 750;
+            text-align: center;
+            color: #000;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Header - Same as dashboard */
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            border: 1px solid #00456A;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #2C3E50;
+            font-size: clamp(24px, 4vw, 40px);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #2C3E50;
+            font-size: clamp(14px, 2vw, 18px);
+        }
+
+        /* Settings Card */
+        .settings-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            border: 1px solid #00456A;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .settings-card h2 {
+            color: #2C3E50;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        /* Form Styles - Same as modal form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2C3E50;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E3F5FF;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            background: #F8FCFF;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00456A;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 69, 106, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-group input:disabled {
+            background: #E3F5FF;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 12px 30px;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #00456A;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #003855;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 69, 106, 0.3);
+        }
+
+        .btn-secondary {
+            background: #D9D9D9;
+            color: #2C3E50;
+        }
+
+        .btn-secondary:hover {
+            background: #C0C0C0;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        /* Toast Notification - Same as dashboard */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 9999;
+            min-width: 300px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.active {
+            display: flex;
+        }
+
+        .toast.success {
+            border-left: 4px solid #00A311;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ED6363;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-icon {
+            font-size: 24px;
+        }
+
+        .toast-message {
+            flex: 1;
+            color: #2C3E50;
+            font-size: 14px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 9998;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #E3F5FF;
+            border-top-color: #00456A;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #2C3E50;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 80px;
+                padding: 15px 0;
+            }
+
+            .logo {
+                width: 50px;
+                height: 50px;
+            }
+
+            .menu-item span {
+                font-size: 10px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .settings-card {
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="{{ asset('images/voica-logo.png') }}" alt="VOICA Logo" style="width: 100%; height: auto; object-fit: contain;">
+            </div>
+            
+            <a href="{{ route('dashboard') }}" class="menu-item">
+                <div class="menu-item-icon">🏠</div>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ route('budgeting') }}" class="menu-item">
+                <div class="menu-item-icon">💰</div>
+                <span>Anggaran</span>
+            </a>
+
+            <div class="menu-item">
+                <div class="menu-item-icon">🎯</div>
+                <span>Target</span>
+            </div>
+
+            <a href="{{ route('laporan') }}" class="menu-item">
+                <div class="menu-item-icon">📊</div>
+                <span>Laporan</span>
+            </a>
+
+            <a href="{{ route('settings') }}" class="menu-item">
+                <div class="menu-item-icon">⚙️</div>
+                <span>Pengaturan</span>
+            </a>
+
+            <div class="menu-item" style="margin-top: auto; margin-bottom: 20px;">
+                <form method="POST" action="{{ route('logout') }}" style="display: contents;">
+                    @csrf
+                    <button type="submit" style="background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0;">
+                        <div class="menu-item-icon" style="background:#FFE4E4;">🚪</div>
+                        <span style="color: #F53003; font-size: 18px; font-weight: 750;">Keluar</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1>Pengaturan Akun</h1>
+                <p>Kelola informasi akun Anda</p>
+            </div>
+
+            <!-- Settings Card -->
+            <div class="settings-card">
+                <h2>Informasi Pribadi</h2>
+                
+                <form id="settingsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Nama Lengkap *</label>
+                            <input type="text" id="name" name="name" value="{{ $user->name }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Nomor Telepon *</label>
+                            <input type="tel" id="phone" name="phone" value="{{ $user->phone ?? '' }}" required>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #E3F5FF;">
+
+                    <h2 style="margin-bottom: 20px;">Ubah Password (Opsional)</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Password Baru</label>
+                            <input type="password" id="password" name="password" placeholder="Kosongkan jika tidak ingin mengubah">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password_confirmation">Konfirmasi Password</label>
+                            <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Ulangi password baru">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ route('dashboard') }}'">
+                            Batal
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            💾 Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Menyimpan perubahan...</div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-icon" id="toastIcon"></div>
+        <div class="toast-message" id="toastMessage"></div>
+    </div>
+
+    <script>
+        // Handle form submission
+        document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Get form data
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                password: document.getElementById('password').value,
+                password_confirmation: document.getElementById('password_confirmation').value
+            };
+
+            // Validate password confirmation
+            if (formData.password && formData.password !== formData.password_confirmation) {
+                showToast('Password dan konfirmasi password tidak sama', 'error');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                // Send to API
+                const response = await fetch('/settings/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                // Hide loading
+                document.getElementById('loadingOverlay').classList.remove('active');
+
+                if (result.success) {
+                    showToast('✅ ' + result.message, 'success');
+                    
+                    // Clear password fields
+                    document.getElementById('password').value = '';
+                    document.getElementById('password_confirmation').value = '';
+                } else {
+                    if (result.errors) {
+                        const firstError = Object.values(result.errors)[0][0];
+                        showToast('❌ ' + firstError, 'error');
+                    } else {
+                        showToast('❌ ' + result.message, 'error');
+                    }
+                }
+
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                console.error('Error:', error);
+                showToast('❌ Terjadi kesalahan. Silakan coba lagi.', 'error');
+            }
+        });
+
+        // Toast notification function
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            // Set icon
+            toastIcon.textContent = type === 'success' ? '✅' : '❌';
+            
+            // Set message
+            toastMessage.textContent = message;
+            
+            // Set type
+            toast.className = `toast ${type} active`;
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

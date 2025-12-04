@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -113,7 +114,7 @@ class AuthController extends Controller
 
         } catch (\Exception $e) {
             // Clean up voice file if exists
-            if (isset($voiceResult['voice_path'])) {
+            if (isset($voiceResult) && isset($voiceResult['voice_path'])) {
                 Storage::delete($voiceResult['voice_path']);
             }
 
@@ -297,7 +298,7 @@ class AuthController extends Controller
                 $base64Data = $request->input('voice_audio_base64');
                 return $this->voiceAuthService->base64ToFile($base64Data);
             } catch (\Exception $e) {
-                \Log::error('Failed to convert base64 to file: ' . $e->getMessage());
+                Log::error('Failed to convert base64 to file: ' . $e->getMessage());
                 return null;
             }
         }
@@ -330,12 +331,12 @@ class AuthController extends Controller
             
             // Konversi ke WAV jika perlu
             if (strtolower($extension) !== 'wav') {
-                \Log::info('🔄 Starting FFmpeg conversion...');
+                Log::info('🔄 Starting FFmpeg conversion...');
                 
                 try {
                     $convertedPath = $this->voiceAuthService->convertToWav($fullPath);
                     
-                    \Log::info('Conversion result path: ' . $convertedPath);
+                    Log::info('Conversion result path: ' . $convertedPath);
                     
                     // Cek apakah konversi benar-benar berhasil
                     if (!file_exists($convertedPath)) {
@@ -347,7 +348,7 @@ class AuthController extends Controller
                     }
                     
                     $wavSize = filesize($convertedPath);
-                    \Log::info('✅ WAV created! Size: ' . $wavSize . ' bytes');
+                    Log::info('✅ WAV created! Size: ' . $wavSize . ' bytes');
                     
                     if ($wavSize < 1000) {
                         throw new \Exception('File WAV terlalu kecil: ' . $wavSize . ' bytes');
@@ -357,7 +358,7 @@ class AuthController extends Controller
                     $fullPath = $convertedPath;
                     $savedPath = 'voices/' . basename($convertedPath);
             }  catch (\Exception $e) {
-                \Log::error('❌ Konversi gagal: ' . $e->getMessage());
+                Log::error('❌ Konversi gagal: ' . $e->getMessage());
                 throw new \Exception('Gagal konversi audio ke WAV: ' . $e->getMessage());
             }
         }
