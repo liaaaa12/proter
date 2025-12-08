@@ -12,13 +12,34 @@ class GoalsController extends Controller
     {
         $goals = Goal::where('user_id', Auth::id())->orderBy('created_at', 'desc')->get();
 
+        // Calculate nominalBerjalan from transactions with goal_id
+        $goals = $goals->map(function($goal) {
+            // Sum all transactions that are allocated to this goal
+            // Both Pemasukan and Pengeluaran can contribute to goals
+            $nominalBerjalan = \Illuminate\Support\Facades\DB::table('transaction')
+                ->where('user_id', Auth::id())
+                ->where('goal_id', $goal->id)
+                ->sum('jumlah');
+            
+            // Update the goal object with calculated value
+            $goal->nominalBerjalan = $nominalBerjalan;
+            
+            return $goal;
+        });
+
+        // Get all budgets for voice modal dropdown
+        $allBudgets = \Illuminate\Support\Facades\DB::table('budget')
+            ->where('user_id', Auth::id())
+            ->select('id', 'namaBudget', 'kategori')
+            ->get();
+
         // If request is AJAX, return only the inner content to swap into the page
         if ($request->ajax() || $request->wantsJson()) {
-            return view('goals._content', compact('goals'));
+            return view('goals._content', compact('goals', 'allBudgets'));
         }
 
         // Full page (when navigated directly)
-        return view('goals.index', compact('goals'));
+        return view('goals.index', compact('goals', 'allBudgets'));
     }
 
     public function store(Request $request)

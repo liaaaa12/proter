@@ -38,30 +38,21 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {   
+        // Custom validation untuk voice audio (terima file ATAU base64)
         $validator = Validator::make($request->all(), [
-    'name' => ['required', 'string', 'max:255'],
-    'phone' => ['required', 'string', 'max:20', 'unique:users'],
-    'password' => ['required', 'confirmed', Password::min(8)],
-    // voice optional total
-    'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
-    'voice_audio_base64' => ['nullable', 'string'],
-]);
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20', 'unique:users'],
+            'password' => ['required', 'confirmed', Password::min(8)],
+            'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
+            'voice_audio_base64' => ['nullable', 'string'],
+        ]);
 
-        // // Custom validation untuk voice audio (terima file ATAU base64)
-        // $validator = Validator::make($request->all(), [
-        //     'name' => ['required', 'string', 'max:255'],
-        //     'phone' => ['required', 'string', 'max:20', 'unique:users'],
-        //     'password' => ['required', 'confirmed', Password::min(8)],
-        //     'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
-        //     'voice_audio_base64' => ['nullable', 'string'],
-        // ]);
-
-        // // Validasi tambahan: minimal salah satu harus ada
-        // $validator->after(function ($validator) use ($request) {
-        //     if (!$request->hasFile('voice_audio_file') && !$request->filled('voice_audio_base64')) {
-        //         $validator->errors()->add('voice_audio', 'Rekaman suara diperlukan untuk pendaftaran');
-        //     }
-        // });
+        // Validasi tambahan: minimal salah satu harus ada
+        $validator->after(function ($validator) use ($request) {
+            if (!$request->hasFile('voice_audio_file') && !$request->filled('voice_audio_base64')) {
+                $validator->errors()->add('voice_audio', 'Rekaman suara diperlukan untuk pendaftaran');
+            }
+        });
 
         if ($validator->fails()) {
             return back()
@@ -72,41 +63,38 @@ class AuthController extends Controller
 
         try {
             // Proses audio: prioritaskan file upload, fallback ke base64
-            // $audioFile = $this->processAudioInput($request);
+            $audioFile = $this->processAudioInput($request);
             
-            // if (!$audioFile) {
-            //     return back()
-            //         ->withErrors(['voice_audio' => 'Gagal memproses file audio'])
-            //         ->withInput()
-            //         ->with('mode', 'register');
-            // }
+            if (!$audioFile) {
+                return back()
+                    ->withErrors(['voice_audio' => 'Gagal memproses file audio'])
+                    ->withInput()
+                    ->with('mode', 'register');
+            }
 
-            // // Process voice enrollment
-            // $voiceResult = $this->processVoiceEnrollment($audioFile);
+            // Process voice enrollment
+            $voiceResult = $this->processVoiceEnrollment($audioFile);
             
-            // // Cleanup temporary file jika dari base64
-            // if ($audioFile->getClientOriginalName() === 'recorded_voice') {
-            //     $this->voiceAuthService->cleanup($audioFile->getRealPath());
-            // }
+            // Cleanup temporary file jika dari base64
+            if ($audioFile->getClientOriginalName() === 'recorded_voice') {
+                $this->voiceAuthService->cleanup($audioFile->getRealPath());
+            }
             
-            // if (!$voiceResult['success']) {
-            //     return back()
-            //         ->withErrors(['voice_audio' => $voiceResult['error']])
-            //         ->withInput()
-            //         ->with('mode', 'register');
-            // }
+            if (!$voiceResult['success']) {
+                return back()
+                    ->withErrors(['voice_audio' => $voiceResult['error']])
+                    ->withInput()
+                    ->with('mode', 'register');
+            }
 
             // Create user
             $user = User::create([
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'voice_path' => null,
-                //'voice_path' => $voiceResult['voice_path'],
-                'voice_embedding' => null,
-                //'voice_embedding' => json_encode($voiceResult['features']),
-                'voice_enrolled_at' => null,
-                //'voice_enrolled_at' => now(),
+                'voice_path' => $voiceResult['voice_path'],
+                'voice_embedding' => json_encode($voiceResult['features']),
+                'voice_enrolled_at' => now(),
             ]);
 
             // Redirect to login page with success message (no auto-login)

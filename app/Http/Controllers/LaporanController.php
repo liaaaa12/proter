@@ -28,7 +28,19 @@ class LaporanController extends Controller
         
         $years = range($startYear, $endYear);
         
-        return view('laporan', compact('years'));
+        // Get all budgets for voice modal dropdown
+        $allBudgets = DB::table('budget')
+            ->where('user_id', $user->id)
+            ->select('id', 'namaBudget', 'kategori')
+            ->get();
+        
+        // Get all goals for voice modal dropdown
+        $goals = DB::table('goals')
+            ->where('user_id', $user->id)
+            ->select('id', 'namaGoal')
+            ->get();
+        
+        return view('laporan.index', compact('years', 'allBudgets', 'goals'));
     }
 
     /**
@@ -86,7 +98,7 @@ class LaporanController extends Controller
         
         return response()->json([
             'success' => true,
-            'data' => $transactionsWithBalance,
+            'transactions' => $transactionsWithBalance,
             'summary' => [
                 'total_pemasukan' => $totalPemasukan,
                 'total_pemasukan_formatted' => 'Rp ' . number_format($totalPemasukan, 0, ',', '.'),

@@ -1,7 +1,7 @@
 <!-- Header -->
 <div class="header">
-    <h1>Laporan</h1>
-    <p>Yuk, lihat laporan anda!</p>
+    <h1>Laporan Keuangan</h1>
+    <p>📊 Pantau transaksi dan kelola keuangan Anda!</p>
 </div>
 
 <!-- Filter Section -->
@@ -78,50 +78,127 @@
     </div>
 </div>
 
-<!-- Table Section -->
+<!-- Summary Cards (Outside table section) -->
+<div id="summaryCards" class="summary-cards" style="display: none;">
+    <div class="summary-card pemasukan">
+        <div class="summary-label">Total Pemasukan</div>
+        <div class="summary-value" id="totalPemasukanCard">0</div>
+    </div>
+    <div class="summary-card pengeluaran">
+        <div class="summary-label">Total Pengeluaran</div>
+        <div class="summary-value" id="totalPengeluaranCard">0</div>
+    </div>
+    <div class="summary-card saldo">
+        <div class="summary-label">Saldo Akhir</div>
+        <div class="summary-value" id="saldoAkhirCard">0</div>
+    </div>
+</div>
+
+<!-- Table Section (Scrollable) -->
 <div class="table-section">
     <div id="periodInfo" style="margin-bottom: 15px; font-size: 16px; font-weight: 600; color: #00456A; display: none;">
         Periode: <span id="periodText"></span>
     </div>
     
-    <table>
-        <thead>
-            <tr>
-                <th>Tanggal</th>
-                <th>Kategori</th>
-                <th>Nominal</th>
-                <th>Saldo</th>
-                <th>Catatan</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            <tr>
-                <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
-                    Pilih periode dan klik "Cari" untuk menampilkan data
-                </td>
-            </tr>
-        </tbody>
-        <tfoot id="tableSummary" style="display: none;">
-            <tr style="background: #E3F5FF; font-weight: 700;">
-                <td colspan="2" style="text-align: right; padding: 15px 20px;">Total Pemasukan:</td>
-                <td id="totalPemasukan" style="text-align: right; color: #2ecc71;"></td>
-                <td colspan="2"></td>
-            </tr>
-            <tr style="background: #E3F5FF; font-weight: 700;">
-                <td colspan="2" style="text-align: right; padding: 15px 20px;">Total Pengeluaran:</td>
-                <td id="totalPengeluaran" style="text-align: right; color: #e74c3c;"></td>
-                <td colspan="2"></td>
-            </tr>
-            <tr style="background: #00456A; color: white; font-weight: 700;">
-                <td colspan="2" style="text-align: right; padding: 15px 20px;">Saldo Akhir:</td>
-                <td id="saldoAkhir" style="text-align: right;"></td>
-                <td colspan="2"></td>
-            </tr>
-        </tfoot>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Kategori</th>
+                    <th>Nominal</th>
+                    <th>Saldo</th>
+                    <th>Catatan</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                        Pilih periode dan klik "Cari" untuk menampilkan data
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
+<!-- Edit Transaction Modal -->
+<div class="modal-overlay" id="editModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Transaksi</h2>
+            <button class="close-btn" onclick="closeEditModal()">&times;</button>
+        </div>
+        
+        <form id="editForm" onsubmit="saveEdit(event)">
+            <input type="hidden" id="editId">
+            
+            <div class="form-group">
+                <label for="editTanggal">Tanggal *</label>
+                <input type="date" id="editTanggal" required>
+            </div>
+
+            <div class="form-group">
+                <label for="editJenis">Jenis Transaksi *</label>
+                <select id="editJenis" required>
+                    <option value="Pemasukan">Pemasukan</option>
+                    <option value="Pengeluaran">Pengeluaran</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="editKategori">Kategori *</label>
+                <select id="editKategori" required>
+                    <option value="Makanan">Makanan</option>
+                    <option value="Transportasi">Transportasi</option>
+                    <option value="Hiburan">Hiburan</option>
+                    <option value="Kebutuhan">Kebutuhan</option>
+                    <option value="Belanja">Belanja</option>
+                    <option value="Kesehatan">Kesehatan</option>
+                    <option value="Pendidikan">Pendidikan</option>
+                    <option value="Gaji">Gaji</option>
+                    <option value="Bonus">Bonus</option>
+                    <option value="Investasi">Investasi</option>
+                    <option value="Tabungan">Tabungan</option>
+                    <option value="Sedekah">Sedekah</option>
+                    <option value="Lainnya">Lainnya</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="editJumlah">Jumlah (Rp) *</label>
+                <input type="number" id="editJumlah" min="0" step="1000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="editKeterangan">Keterangan *</label>
+                <textarea id="editKeterangan" rows="3" required></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Batal</button>
+                <button type="submit" class="btn btn-primary">💾 Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <style>
+    /* Header */
+    .header h1 {
+        color: #2C3E50;
+        font-size: clamp(24px, 4vw, 40px);
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .header p {
+        color: #2C3E50;
+        font-size: clamp(14px, 2vw, 20px);
+    }
+
     /* Filter Section */
     .filter-section {
         background: white;
@@ -226,6 +303,65 @@
         transform: translateY(-2px);
     }
 
+    /* Summary Cards (Outside table section) */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 25px; /* Space between cards and table */
+    }
+
+    .summary-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        border: 2px solid;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .summary-card.pemasukan {
+        border-color: #00A311;
+        background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
+    }
+
+    .summary-card.pengeluaran {
+        border-color: #ED6363;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    }
+
+    .summary-card.saldo {
+        border-color: #00456A;
+        background: linear-gradient(135deg, #e3f5ff 0%, #ffffff 100%);
+    }
+
+    .summary-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #676363;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .summary-value {
+        font-size: 24px;
+        font-weight: 800;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .summary-card.pemasukan .summary-value {
+        color: #00A311;
+    }
+
+    .summary-card.pengeluaran .summary-value {
+        color: #ED6363;
+    }
+
+    .summary-card.saldo .summary-value {
+        color: #00456A;
+    }
+
     /* Table Section */
     .table-section {
         background: white;
@@ -233,7 +369,12 @@
         border-radius: 10px;
         border: 1px solid #00456A;
         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Table Wrapper - Scrollable */
+    .table-wrapper {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
     }
 
     table {
@@ -249,7 +390,7 @@
 
     th {
         padding: 15px 20px;
-        text-align: left;
+        text-align: center;
         font-size: 16px;
         font-weight: 600;
         white-space: nowrap;
@@ -257,21 +398,14 @@
 
     td {
         padding: 15px 20px;
-        text-align: left;
+        text-align: center;
         font-size: 16px;
         border-bottom: 1px solid #E3F5FF;
         vertical-align: middle;
     }
 
-    th:nth-child(1), td:nth-child(1) {
-        white-space: nowrap;
-        width: 15%;
-    }
-
-    th:nth-child(3), td:nth-child(3),
-    th:nth-child(4), td:nth-child(4) {
-        text-align: right;
-        white-space: nowrap;
+    /* Nominal and Saldo columns - keep monospace font */
+    td:nth-child(3), td:nth-child(4) {
         font-family: 'Consolas', 'Monaco', monospace;
         font-weight: 600;
     }
@@ -280,7 +414,101 @@
         background: #F8FCFF;
     }
 
+    /* Action Buttons */
+    .btn-action {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 5px 8px;
+        border-radius: 5px;
+        transition: all 0.2s;
+        margin: 0 3px;
+    }
+
+    .btn-action:hover {
+        transform: scale(1.2);
+    }
+
+    .btn-edit:hover {
+        background: #E3F5FF;
+    }
+
+    .btn-delete:hover {
+        background: #FFE4E4;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        color: #00456A;
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 30px;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+    }
+
+    .close-btn:hover {
+        color: #ED6363;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .modal-actions .btn {
+        flex: 1;
+    }
+
     @media (max-width: 768px) {
+        .summary-cards {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .summary-value {
+            font-size: 20px;
+        }
+
         .filter-controls {
             flex-direction: column;
             align-items: stretch;
@@ -294,10 +522,6 @@
         .btn-download {
             width: 100%;
             justify-content: center;
-        }
-
-        .table-section {
-            overflow-x: scroll;
         }
     }
 </style>
@@ -316,7 +540,36 @@
         const tahunSampai = document.getElementById('tahunSampai').value;
 
         if (!bulanDari || !tahunDari || !bulanSampai || !tahunSampai) {
-            alert('Mohon lengkapi semua filter periode');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Periode Belum Lengkap',
+                text: 'Mohon lengkapi semua filter periode',
+                confirmButtonColor: '#00456A'
+            });
+            return;
+        }
+
+        // Validate period: "Sampai" must be >= "Dari"
+        const dateFrom = new Date(tahunDari, bulanDari - 1, 1);
+        const dateTo = new Date(tahunSampai, bulanSampai - 1, 1);
+
+        if (dateTo < dateFrom) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Periode Tidak Valid',
+                html: `
+                    <p style="font-size: 16px; color: #2C3E50; margin-bottom: 10px;">
+                        Periode <strong>"Sampai"</strong> tidak boleh lebih awal dari periode <strong>"Dari"</strong>
+                    </p>
+                    <p style="font-size: 14px; color: #676363;">
+                        Contoh yang benar:<br>
+                        <strong>Dari:</strong> Desember 2025<br>
+                        <strong>Sampai:</strong> Januari 2026 atau lebih
+                    </p>
+                `,
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'Mengerti'
+            });
             return;
         }
 
@@ -328,21 +581,31 @@
                 renderTable(data.transactions, data.summary);
                 showPeriodInfo(bulanDari, tahunDari, bulanSampai, tahunSampai);
             } else {
-                alert('Gagal mengambil data');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Mengambil Data',
+                    text: 'Terjadi kesalahan saat mengambil data transaksi',
+                    confirmButtonColor: '#00456A'
+                });
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat mengambil data');
+            Swal.fire({
+                icon: 'error',
+                title: 'Terjadi Kesalahan',
+                text: 'Tidak dapat terhubung ke server. Silakan coba lagi.',
+                confirmButtonColor: '#00456A'
+            });
         }
     }
 
     function renderTable(transactions, summary) {
         const tbody = document.getElementById('tableBody');
-        const tfoot = document.getElementById('tableSummary');
+        const summaryCards = document.getElementById('summaryCards');
 
         if (transactions.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">Tidak ada data untuk periode ini</td></tr>';
-            tfoot.style.display = 'none';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">Tidak ada data untuk periode ini</td></tr>';
+            summaryCards.style.display = 'none';
             return;
         }
 
@@ -357,22 +620,30 @@
                 <tr>
                     <td>${formatDate(trx.tanggal)}</td>
                     <td>${trx.kategori}</td>
-                    <td style="color: ${trx.jenis === 'Pemasukan' ? '#2ecc71' : '#e74c3c'}">
-                        ${trx.jenis === 'Pemasukan' ? '+' : '-'} Rp ${formatNumber(nominal)}
+                    <td style="color: ${trx.jenis === 'Pemasukan' ? '#00A311' : '#ED6363'}">
+                        ${trx.jenis === 'Pemasukan' ? '+' : '-'} ${formatNumber(nominal)}
                     </td>
-                    <td>Rp ${formatNumber(saldo)}</td>
+                    <td>${formatNumber(saldo)}</td>
                     <td>${trx.keterangan}</td>
+                    <td>
+                        <button class="btn-action btn-edit" onclick="editTransaction(${trx.id}, '${trx.jenis}', '${trx.kategori}', ${nominal}, '${trx.keterangan}', '${trx.tanggal}')" title="Edit">
+                            ✏️
+                        </button>
+                        <button class="btn-action btn-delete" onclick="deleteTransaction(${trx.id})" title="Hapus">
+                            🗑️
+                        </button>
+                    </td>
                 </tr>
             `;
         });
 
         tbody.innerHTML = html;
 
-        // Update summary
-        document.getElementById('totalPemasukan').textContent = 'Rp ' + formatNumber(summary.total_pemasukan);
-        document.getElementById('totalPengeluaran').textContent = 'Rp ' + formatNumber(summary.total_pengeluaran);
-        document.getElementById('saldoAkhir').textContent = 'Rp ' + formatNumber(summary.saldo_akhir);
-        tfoot.style.display = 'table-footer-group';
+        // Update summary cards (with Rp prefix)
+        document.getElementById('totalPemasukanCard').textContent = 'Rp ' + formatNumber(summary.total_pemasukan);
+        document.getElementById('totalPengeluaranCard').textContent = 'Rp ' + formatNumber(summary.total_pengeluaran);
+        document.getElementById('saldoAkhirCard').textContent = 'Rp ' + formatNumber(summary.saldo_akhir);
+        summaryCards.style.display = 'grid';
     }
 
     function showPeriodInfo(bulanDari, tahunDari, bulanSampai, tahunSampai) {
@@ -389,7 +660,34 @@
         const tahunSampai = document.getElementById('tahunSampai').value;
 
         if (!bulanDari || !tahunDari || !bulanSampai || !tahunSampai) {
-            alert('Mohon pilih periode terlebih dahulu');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Periode Belum Lengkap',
+                text: 'Mohon pilih periode terlebih dahulu',
+                confirmButtonColor: '#00456A'
+            });
+            return;
+        }
+
+        // Validate period: "Sampai" must be >= "Dari"
+        const dateFrom = new Date(tahunDari, bulanDari - 1, 1);
+        const dateTo = new Date(tahunSampai, bulanSampai - 1, 1);
+
+        if (dateTo < dateFrom) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Periode Tidak Valid',
+                html: `
+                    <p style="font-size: 16px; color: #2C3E50; margin-bottom: 10px;">
+                        Periode <strong>"Sampai"</strong> tidak boleh lebih awal dari periode <strong>"Dari"</strong>
+                    </p>
+                    <p style="font-size: 14px; color: #676363;">
+                        Silakan perbaiki periode sebelum mengunduh laporan
+                    </p>
+                `,
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'Mengerti'
+            });
             return;
         }
 
@@ -403,5 +701,135 @@
     function formatDate(dateStr) {
         const date = new Date(dateStr);
         return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    // Edit Transaction
+    function editTransaction(id, jenis, kategori, jumlah, keterangan, tanggal) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editTanggal').value = tanggal;
+        document.getElementById('editJenis').value = jenis;
+        document.getElementById('editKategori').value = kategori;
+        document.getElementById('editJumlah').value = jumlah;
+        document.getElementById('editKeterangan').value = keterangan;
+        
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function saveEdit(event) {
+        event.preventDefault();
+
+        const id = document.getElementById('editId').value;
+        const data = {
+            tanggal: document.getElementById('editTanggal').value,
+            jenis: document.getElementById('editJenis').value,
+            kategori: document.getElementById('editKategori').value,
+            jumlah: parseFloat(document.getElementById('editJumlah').value),
+            keterangan: document.getElementById('editKeterangan').value
+        };
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            const response = await fetch(`/api/transactions/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeEditModal();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Transaksi berhasil diperbarui',
+                    confirmButtonColor: '#00456A'
+                }).then(() => {
+                    // Reload data
+                    document.getElementById('btnCari').click();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: result.message || 'Gagal memperbarui transaksi',
+                    confirmButtonColor: '#00456A'
+                });
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: 'Terjadi kesalahan saat memperbarui transaksi',
+                confirmButtonColor: '#00456A'
+            });
+        }
+    }
+
+    // Delete Transaction
+    async function deleteTransaction(id) {
+        const result = await Swal.fire({
+            title: 'Hapus Transaksi?',
+            text: 'Transaksi yang dihapus tidak dapat dikembalikan!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ED6363',
+            cancelButtonColor: '#999',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            const response = await fetch(`/api/transactions/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Terhapus!',
+                    text: 'Transaksi berhasil dihapus',
+                    confirmButtonColor: '#00456A'
+                }).then(() => {
+                    // Reload data
+                    document.getElementById('btnCari').click();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: data.message || 'Gagal menghapus transaksi',
+                    confirmButtonColor: '#00456A'
+                });
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: 'Terjadi kesalahan saat menghapus transaksi',
+                confirmButtonColor: '#00456A'
+            });
+        }
     }
 </script>
