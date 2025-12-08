@@ -27,11 +27,17 @@
             padding: 40px 20px;
         }
         .logo {
-            width: 92px; height: 86px;
-            background: #5B9E9D;
-            border-radius: 44px;
+            width: 150px; height: 140px;
             margin-bottom: 24px;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .title {
             width: 100%; max-width: 681px;
@@ -369,11 +375,164 @@
             padding: 5px 10px;
         }
         .modal-close:hover { color: #F53003; }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .auth-container {
+                padding: 20px 10px;
+            }
+
+            .logo {
+                width: 100px;
+                height: 93px;
+                margin-bottom: 16px;
+            }
+
+            .title {
+                font-size: 16px;
+                margin-bottom: 24px;
+                padding: 0 10px;
+            }
+
+            .form-card {
+                padding: 30px 20px;
+                border-radius: 10px;
+            }
+
+            .tab-container {
+                height: 50px;
+                margin-bottom: 25px;
+            }
+
+            .tab-slider {
+                height: 36px;
+            }
+
+            .tab-button {
+                font-size: 18px;
+            }
+
+            .input-label {
+                font-size: 16px;
+                margin-bottom: 6px;
+            }
+
+            .input-wrapper {
+                height: 44px;
+                padding: 0 12px;
+            }
+
+            .input-field {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+
+            .input-group {
+                margin-bottom: 20px;
+            }
+
+            .voice-recorder {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+
+            .voice-icon {
+                font-size: 36px;
+            }
+
+            .voice-status {
+                font-size: 14px;
+            }
+
+            .voice-timer {
+                font-size: 18px;
+            }
+
+            .voice-btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+
+            .remember-forgot {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .remember-label,
+            .forgot-link {
+                font-size: 14px;
+            }
+
+            .submit-btn {
+                height: 48px;
+                font-size: 20px;
+            }
+
+            .voice-login-btn {
+                height: 48px;
+                font-size: 18px;
+                margin-top: 12px;
+            }
+
+            .error-box,
+            .success-box {
+                padding: 12px 15px;
+            }
+
+            .error-title,
+            .error-list,
+            .success-text {
+                font-size: 13px;
+            }
+
+            .modal-content {
+                padding: 25px 20px;
+                width: 95%;
+            }
+
+            .modal-title {
+                font-size: 20px;
+            }
+
+            .modal-subtitle {
+                font-size: 13px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 480px) {
+            .form-card {
+                padding: 25px 15px;
+            }
+
+            .tab-button {
+                font-size: 16px;
+            }
+
+            .input-label {
+                font-size: 15px;
+            }
+
+            .submit-btn {
+                font-size: 18px;
+            }
+
+            .voice-login-btn {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="auth-container">
-        <div class="logo"></div>
+        <div class="logo">
+            <img src="{{ asset('images/voica-logo.png') }}" alt="Voica Logo">
+        </div>
         <div class="title">Kelola keuangan Anda dengan mudah!</div>
 
         <div class="form-wrapper">

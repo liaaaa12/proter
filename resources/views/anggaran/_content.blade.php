@@ -1,14 +1,14 @@
 <!-- Header -->
 <div class="header">
     <div class="header-text">
-        <h1>Budgeting</h1>
+        <h1>Anggaran</h1>
         <p>💡 Atur anggaran bulanan Anda agar keuangan lebih terkontrol!</p>
     </div>
     <button class="voice-btn" id="voiceBtn">
         <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
             <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
         </svg>
-        <span class="voice-btn-text">Tekan Untuk Bersuara</span>
+        <span class="voice-btn-text">Transaksi dengan Suara</span>
     </button>
 </div>
 
@@ -69,24 +69,30 @@
 <div class="modal-overlay" id="budgetModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="modalTitle">Tambah Anggaran Baru</h2>
+            <h2 id="modalTitle" style="color: #00456A;">Tambah Anggaran Baru</h2>
             <button class="close-btn" onclick="closeModal()">&times;</button>
         </div>
+        <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 25px;">Isi form di bawah ini untuk mengatur anggaran bulanan</p>
         
         <form id="budgetForm" onsubmit="saveBudget(event)">
             @csrf
             <input type="hidden" id="budgetId" value="">
             
             <div class="form-group">
-                <label for="namaBudget">📝 Nama Anggaran *</label>
-                <input type="text" id="namaBudget" name="namaBudget" placeholder="Contoh: Belanja Bulanan" required>
-                <div class="helper-text">Berikan nama yang mudah diingat untuk anggaran ini</div>
+                <label for="namaBudget" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    📝 Nama Anggaran <span style="color: #ED6363;">*</span>
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Berikan nama yang mudah diingat</p>
+                <input type="text" id="namaBudget" name="namaBudget" placeholder="Contoh: Belanja Bulanan, Uang Makan" required style="font-size: 16px; padding: 14px;">
             </div>
 
             <div class="form-group">
-                <label for="kategori">🏷️ Kategori *</label>
-                <select id="kategori" name="kategori" required>
-                    <option value="">Pilih Kategori</option>
+                <label for="kategori" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    🏷️ Kategori <span style="color: #ED6363;">*</span>
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Pilih kategori yang sesuai (icon akan muncul otomatis)</p>
+                <select id="kategori" name="kategori" required style="font-size: 16px; padding: 14px;">
+                    <option value="">-- Pilih Kategori --</option>
                     <option value="Makanan">🍔 Makanan</option>
                     <option value="Transportasi">🚗 Transportasi</option>
                     <option value="Hiburan">🎬 Hiburan</option>
@@ -97,24 +103,28 @@
                     <option value="Tagihan">💳 Tagihan</option>
                     <option value="Lainnya">💰 Lainnya</option>
                 </select>
-                <div class="helper-text">Icon akan otomatis muncul sesuai kategori yang dipilih</div>
             </div>
 
             <div class="form-group">
-                <label for="jumlah">💵 Jumlah Anggaran (Rp) *</label>
-                <input type="number" id="jumlah" name="jumlah" placeholder="0" required min="0" step="1000">
-                <div class="helper-text">Masukkan total anggaran untuk kategori ini</div>
+                <label for="jumlah" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    💵 Berapa Anggarannya? <span style="color: #ED6363;">*</span>
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Total uang yang dialokasikan untuk kategori ini</p>
+                <input type="number" id="jumlah" name="jumlah" placeholder="Contoh: 2000000" required min="0" step="1000" style="font-size: 16px; padding: 14px;">
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">💡 Tulis angka saja tanpa titik atau koma</p>
             </div>
 
             <div class="form-group" id="periodeGroup">
-                <label for="periode">📅 Periode (Bulan & Tahun) *</label>
-                <input type="month" id="periode" name="periode" value="{{ $periode }}" required>
-                <div class="helper-text">Pilih bulan dan tahun untuk anggaran ini</div>
+                <label for="periode" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    📅 Untuk Bulan Apa? <span style="color: #ED6363;">*</span>
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Pilih bulan dan tahun untuk anggaran ini</p>
+                <input type="month" id="periode" name="periode" value="{{ $periode }}" required style="font-size: 16px; padding: 14px;">
             </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
-                <button type="submit" class="btn btn-primary">💾 Simpan Anggaran</button>
+            <div class="modal-actions" style="margin-top: 30px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()" style="font-size: 16px; padding: 14px;">Batal</button>
+                <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 14px;">💾 Simpan Anggaran</button>
             </div>
         </form>
     </div>
@@ -336,21 +346,124 @@
 
     @media (max-width: 768px) {
         .budget-grid {
-            grid-template-columns: 1fr;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         .controls-section {
             flex-direction: column;
             align-items: stretch;
+            width: 100% !important;
+            margin-bottom: 15px !important;
         }
 
         .period-filter {
             flex-direction: column;
             align-items: stretch;
+            width: 100% !important;
         }
 
         .period-filter input {
+            width: 100% !important;
+            min-width: unset !important;
+        }
+
+        .add-budget-btn {
+            width: 100% !important;
+            text-align: center !important;
+        }
+        
+        /* Budget Cards - Full Width */
+        .budget-card {
+            width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            border-radius: 12px !important;
+        }
+        
+        .budget-header {
+            padding: 12px 15px;
+        }
+        
+        .budget-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+        }
+        
+        .budget-title {
+            font-size: 18px;
+        }
+        
+        .budget-action-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 14px;
+        }
+        
+        .budget-body {
+            padding: 15px 20px;
+        }
+        
+        .budget-row {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .budget-label, .budget-value {
+            font-size: 16px;
+        }
+        
+        .progress-bar {
+            height: 12px;
+        }
+        
+        .progress-info {
+            font-size: 13px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        /* Modal Form Responsive */
+        .modal-content {
+            width: 95%;
+            max-width: 95%;
+            padding: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header h2 {
+            font-size: 20px;
+        }
+        
+        .modal-content p {
+            font-size: 13px;
+        }
+        
+        .form-group label {
+            font-size: 15px !important;
+        }
+        
+        .form-group input,
+        .form-group select {
+            font-size: 15px !important;
+            padding: 12px !important;
+        }
+        
+        .modal-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .modal-actions .btn {
             width: 100%;
+            font-size: 15px !important;
+            padding: 12px !important;
         }
     }
 </style>
@@ -412,18 +525,50 @@
 
             if (result.success) {
                 closeModal();
-                window.location.reload();
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: isEditMode ? 'Anggaran berhasil diperbarui.' : 'Anggaran baru berhasil ditambahkan.',
+                    icon: 'success',
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.reload();
+                });
             } else {
-                alert(result.message || 'Gagal menyimpan anggaran');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: result.message || 'Gagal menyimpan anggaran',
+                    icon: 'error',
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
+                });
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat menyimpan anggaran');
+            Swal.fire({
+                title: 'Error!',
+                text: 'Terjadi kesalahan saat menyimpan anggaran',
+                icon: 'error',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
+            });
         }
     }
 
     async function deleteBudget(id) {
-        if (!confirm('Apakah Anda yakin ingin menghapus anggaran ini?')) return;
+        const result = await Swal.fire({
+            title: 'Hapus Anggaran?',
+            text: 'Apakah Anda yakin ingin menghapus anggaran ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ED6363',
+            cancelButtonColor: '#999',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             const response = await fetch(`/api/budget/${id}`, {
@@ -434,16 +579,36 @@
                 }
             });
 
-            const result = await response.json();
+            const data = await response.json();
 
-            if (result.success) {
-                window.location.reload();
+            if (data.success) {
+                Swal.fire({
+                    title: 'Terhapus!',
+                    text: 'Anggaran berhasil dihapus.',
+                    icon: 'success',
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.reload();
+                });
             } else {
-                alert(result.message || 'Gagal menghapus anggaran');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: data.message || 'Gagal menghapus anggaran',
+                    icon: 'error',
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
+                });
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat menghapus anggaran');
+            Swal.fire({
+                title: 'Error!',
+                text: 'Terjadi kesalahan saat menghapus anggaran',
+                icon: 'error',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
+            });
         }
     }
 

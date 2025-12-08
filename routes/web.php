@@ -80,6 +80,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/goals', [App\Http\Controllers\VoiceTransactionController::class, 'getGoals'])
         ->name('api.goals');
 
+    // Transaction Management (Edit & Delete)
+    Route::put('/api/transactions/{id}', [App\Http\Controllers\VoiceTransactionController::class, 'update'])
+        ->name('transactions.update');
+    Route::delete('/api/transactions/{id}', [App\Http\Controllers\VoiceTransactionController::class, 'destroy'])
+        ->name('transactions.destroy');
+
     // Goals
     Route::get('/goals', [GoalsController::class, 'index'])->name('goals');
     Route::post('/goals', [GoalsController::class, 'store'])->name('goals.store');

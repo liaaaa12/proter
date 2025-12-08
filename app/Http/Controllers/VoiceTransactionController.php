@@ -37,6 +37,8 @@ class VoiceTransactionController extends Controller
                 'kategori' => $validated['kategori'],
                 'jumlah' => $validated['jumlah'],
                 'keterangan' => $validated['keterangan'],
+                'budget_id' => $validated['budget_id'] ?? null, // ← ADDED
+                'goal_id' => $validated['goal_id'] ?? null,     // ← ADDED
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -107,6 +109,203 @@ class VoiceTransactionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menyimpan transaksi',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update an existing transaction
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            // Get the transaction
+            $transaction = DB::table('transaction')
+                ->where('id', $id)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak ditemukan'
+                ], 404);
+            }
+
+            // Validate input
+            $validated = $request->validate([
+                'tanggal' => 'required|date',
+                'jenis' => 'required|in:Pemasukan,Pengeluaran',
+                'kategori' => 'required|string|max:255',
+                'jumlah' => 'required|numeric|min:0',
+                'keterangan' => 'required|string'
+            ]);
+
+            DB::beginTransaction();
+
+            // Revert old budget/goal amounts
+            if ($transaction->budget_id) {
+                $budget = DB::table('budget')->where('id', $transaction->budget_id)->first();
+                if ($budget) {
+                    DB::table('budget')
+                        ->where('id', $transaction->budget_id)
+                        ->update([
+                            'jumlahBerjalan' => $budget->jumlahBerjalan - $transaction->jumlah,
+                            'updated_at' => now()
+                        ]);
+                }
+            }
+
+            if ($transaction->goal_id) {
+                $goal = DB::table('goals')->where('id', $transaction->goal_id)->first();
+                if ($goal) {
+                    DB::table('goals')
+                        ->where('id', $transaction->goal_id)
+                        ->update([
+                            'nominalBerjalan' => $goal->nominalBerjalan - $transaction->jumlah,
+                            'updated_at' => now()
+                        ]);
+                }
+            }
+
+            // Update transaction
+            DB::table('transaction')
+                ->where('id', $id)
+                ->update([
+                    'tanggal' => $validated['tanggal'],
+                    'jenis' => $validated['jenis'],
+                    'kategori' => $validated['kategori'],
+                    'jumlah' => $validated['jumlah'],
+                    'keterangan' => $validated['keterangan'],
+                    'updated_at' => now()
+                ]);
+
+            // Apply new budget/goal amounts
+            if ($transaction->budget_id) {
+                $budget = DB::table('budget')->where('id', $transaction->budget_id)->first();
+                if ($budget) {
+                    DB::table('budget')
+                        ->where('id', $transaction->budget_id)
+                        ->update([
+                            'jumlahBerjalan' => $budget->jumlahBerjalan + $validated['jumlah'],
+                            'updated_at' => now()
+                        ]);
+                }
+            }
+
+            if ($transaction->goal_id) {
+                $goal = DB::table('goals')->where('id', $transaction->goal_id)->first();
+                if ($goal) {
+                    DB::table('goals')
+                        ->where('id', $transaction->goal_id)
+                        ->update([
+                            'nominalBerjalan' => $goal->nominalBerjalan + $validated['jumlah'],
+                            'updated_at' => now()
+                        ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil diperbarui'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error updating transaction: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui transaksi',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a transaction
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy($id)
+    {
+        try {
+            // Get the transaction
+            $transaction = DB::table('transaction')
+                ->where('id', $id)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak ditemukan'
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            // Revert budget/goal amounts
+            if ($transaction->budget_id) {
+                $budget = DB::table('budget')->where('id', $transaction->budget_id)->first();
+                if ($budget) {
+                    DB::table('budget')
+                        ->where('id', $transaction->budget_id)
+                        ->update([
+                            'jumlahBerjalan' => $budget->jumlahBerjalan - $transaction->jumlah,
+                            'updated_at' => now()
+                        ]);
+                }
+            }
+
+            if ($transaction->goal_id) {
+                $goal = DB::table('goals')->where('id', $transaction->goal_id)->first();
+                if ($goal) {
+                    DB::table('goals')
+                        ->where('id', $transaction->goal_id)
+                        ->update([
+                            'nominalBerjalan' => $goal->nominalBerjalan - $transaction->jumlah,
+                            'updated_at' => now()
+                        ]);
+                }
+            }
+
+            // Delete transaction
+            DB::table('transaction')->where('id', $id)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil dihapus'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error deleting transaction: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus transaksi',
                 'error' => $e->getMessage()
             ], 500);
         }

@@ -139,6 +139,12 @@ class NLPParserService
     {
         $text = strtolower($text);
 
+        // Coba deteksi angka dalam kata-kata dulu (misal: "lima belas juta")
+        $nominalFromWords = $this->extractNominalFromWords($text);
+        if ($nominalFromWords !== null) {
+            return $nominalFromWords;
+        }
+
         // Pattern untuk mendeteksi angka dengan satuan
         $patterns = [
             // Format: "4 juta", "4juta", "4 jt"
@@ -161,6 +167,92 @@ class NLPParserService
         }
 
         Log::warning("Nominal tidak terdeteksi dalam text");
+        return null;
+    }
+
+    /**
+     * Convert Indonesian number words to digits
+     * Contoh: "lima belas juta" => 15000000
+     */
+    private function extractNominalFromWords(string $text): ?float
+    {
+        $text = strtolower($text);
+
+        // Mapping kata ke angka
+        $wordToNumber = [
+            'nol' => 0, 'kosong' => 0,
+            'satu' => 1, 'se' => 1,
+            'dua' => 2,
+            'tiga' => 3,
+            'empat' => 4,
+            'lima' => 5,
+            'enam' => 6,
+            'tujuh' => 7,
+            'delapan' => 8,
+            'sembilan' => 9,
+            'sepuluh' => 10,
+            'sebelas' => 11,
+            'belas' => 10, // untuk "lima belas" = 5 + 10
+            'puluh' => 10,
+            'ratus' => 100,
+            'ribu' => 1000,
+            'juta' => 1000000,
+            'miliar' => 1000000000,
+        ];
+
+        // Pattern untuk mendeteksi angka dalam kata
+        // Contoh: "lima belas juta", "dua ratus ribu", "seratus lima puluh ribu"
+        $pattern = '/\b(se|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|ribu|juta|miliar)\b/i';
+        
+        if (!preg_match_all($pattern, $text, $matches)) {
+            return null;
+        }
+
+        $words = $matches[0];
+        if (empty($words)) {
+            return null;
+        }
+
+        $total = 0;
+        $current = 0;
+        $lastMultiplier = 1;
+
+        foreach ($words as $word) {
+            $word = strtolower($word);
+
+            if ($word === 'belas') {
+                // "lima belas" = 5 + 10 = 15
+                $current = $current + 10;
+            } elseif ($word === 'puluh') {
+                // "lima puluh" = 5 * 10 = 50
+                $current = $current * 10;
+            } elseif ($word === 'ratus') {
+                // "lima ratus" = 5 * 100 = 500
+                if ($current == 0) $current = 1; // "seratus" = 100
+                $current = $current * 100;
+            } elseif (in_array($word, ['ribu', 'juta', 'miliar'])) {
+                // Multiplier besar
+                if ($current == 0) $current = 1; // "seribu" = 1000
+                $multiplier = $wordToNumber[$word];
+                $total += $current * $multiplier;
+                $current = 0;
+                $lastMultiplier = $multiplier;
+            } else {
+                // Angka dasar (1-9)
+                if (isset($wordToNumber[$word])) {
+                    $current = $wordToNumber[$word];
+                }
+            }
+        }
+
+        // Tambahkan sisa current
+        $total += $current;
+
+        if ($total > 0) {
+            Log::info("Nominal dari kata-kata terdeteksi: {$total}");
+            return floatval($total);
+        }
+
         return null;
     }
 

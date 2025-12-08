@@ -45,13 +45,14 @@ class BudgetController extends Controller
         
         // Calculate terpakai for each budget from transactions
         $budgetsWithProgress = $budgets->map(function($budget) use ($periode) {
-            // Get total pengeluaran for this category in this period
+            // Get total pengeluaran for this SPECIFIC budget (by budget_id)
             $startDate = Carbon::parse($periode . '-01')->startOfMonth();
             $endDate = Carbon::parse($periode . '-01')->endOfMonth();
             
+            // Only count transactions that are specifically allocated to this budget
             $terpakai = DB::table('transaction')
                 ->where('user_id', $budget->user_id)
-                ->where('kategori', $budget->kategori)
+                ->where('budget_id', $budget->id) // ← CHANGED: Use budget_id instead of kategori
                 ->where('jenis', 'Pengeluaran')
                 ->whereBetween('tanggal', [$startDate, $endDate])
                 ->sum('jumlah');
@@ -75,7 +76,19 @@ class BudgetController extends Controller
             ];
         });
         
-        return view('anggaran', compact('budgetsWithProgress', 'periode'));
+        // Get all budgets for voice modal dropdown
+        $allBudgets = DB::table('budget')
+            ->where('user_id', $user->id)
+            ->select('id', 'namaBudget', 'kategori')
+            ->get();
+        
+        // Get all goals for voice modal dropdown
+        $goals = DB::table('goals')
+            ->where('user_id', $user->id)
+            ->select('id', 'namaGoal')
+            ->get();
+        
+        return view('anggaran', compact('budgetsWithProgress', 'periode', 'allBudgets', 'goals'));
     }
 
     /**
@@ -91,20 +104,6 @@ class BudgetController extends Controller
         ]);
         
         $user = Auth::user();
-        
-        // Check if budget for this category and period already exists
-        $existing = DB::table('budget')
-            ->where('user_id', $user->id)
-            ->where('kategori', $request->kategori)
-            ->where('periode', $request->periode)
-            ->first();
-        
-        if ($existing) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Budget untuk kategori ini di periode yang sama sudah ada!'
-            ], 400);
-        }
         
         // Get icon based on category
         $icon = $this->getCategoryIcon($request->kategori);

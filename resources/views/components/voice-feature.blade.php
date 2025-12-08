@@ -3,7 +3,7 @@
     <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
         <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
     </svg>
-    <span class="voice-btn-text">Tekan Untuk Bersuara</span>
+    <span class="voice-btn-text">Transaksi dengan Suara</span>
 </button>
 
 <!-- Voice Transaction Modal -->
@@ -192,7 +192,7 @@
             if (voiceText) voiceText.textContent = '🔴 Merekam... (Klik Stop)';
         } else {
             voiceBtn.classList.remove('recording');
-            if (voiceText) voiceText.textContent = 'Tekan Untuk Bersuara';
+            if (voiceText) voiceText.textContent = 'Transaksi dengan Suara';
         }
     }
 

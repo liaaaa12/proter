@@ -10,16 +10,19 @@
 <div class="header goals-header">
     <div class="header-text">
         <h1>Target Keuangan</h1>
-        <p>Wujudkan impianmu satu per satu</p>
+        <p>🎯 Wujudkan impianmu satu per satu!</p>
     </div>
-    <button class="btn-add-goal" onclick="openGoalModal()">
-        + Tambah Target
+    <button class="voice-btn" onclick="startVoiceRecording()">
+        <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
+            <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
+        </svg>
+        <span class="voice-btn-text">Transaksi dengan Suara</span>
     </button>
 </div>
 
-<!-- Add Goal Button -->
-<div class="goals-actions" style="display: none;">
-    <button class="btn-add-goal" id="btn-add-goal">+ Tambah Target</button>
+<!-- Add Goal Button (Controls Section) -->
+<div class="goals-actions">
+    <button class="btn-add-goal" onclick="openGoalModal()">+ Tambah Target</button>
 </div>
 
 <!-- Goals List -->
@@ -53,9 +56,14 @@
                 <div class="goal-progress">
                     @php
                         $percentage = $goal->targetNominal > 0 ? round(($goal->nominalBerjalan / $goal->targetNominal) * 100) : 0;
+                        $sisa = $goal->targetNominal - $goal->nominalBerjalan;
                     @endphp
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ $percentage }}%;"></div>
+                        <div class="progress-fill" style="width: {{ min($percentage, 100) }}%;"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span>{{ $percentage }}% Terkumpul</span>
+                        <span>Sisa Rp{{ number_format(max($sisa, 0), 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
@@ -73,31 +81,50 @@
 <!-- Goal Form (Modal-like) - Add & Edit -->
 <div id="goal-form-container" class="goal-form-container" style="display: none;">
     <div class="goal-form">
-        <h3 id="form-title">Tambah Goal Baru</h3>
+        <h3 id="form-title" style="text-align: center; color: #00456A; margin-bottom: 10px;">Tambah Target Baru</h3>
+        <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 25px;">Isi form di bawah ini untuk membuat target tabungan</p>
+        
         <form id="goal-form" method="POST" action="{{ route('goals.store') }}">
             @csrf
             <input type="hidden" id="form-mode" value="add">
             <input type="hidden" id="form-goal-id">
             
             <div class="form-group">
-                <label for="namaGoal">Nama Goal</label>
-                <input type="text" id="namaGoal" name="namaGoal" placeholder="Contoh: Dana Darurat" required>
+                <label for="namaGoal" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    📝 Nama Target <span style="color: #ED6363;">*</span>
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Apa yang ingin Anda capai?</p>
+                <input type="text" id="namaGoal" name="namaGoal" placeholder="Contoh: Dana Darurat, Umroh, Beli Motor" required style="font-size: 16px; padding: 14px;">
             </div>
+
             <div class="form-group">
-                <label for="targetNominal">Target Nominal</label>
-                <input type="number" id="targetNominal" name="targetNominal" placeholder="Rp" required>
+                <label for="targetNominal" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    💰 Berapa Target Uang? <span style="color: #ED6363;">*</span>
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Total uang yang ingin dikumpulkan</p>
+                <input type="number" id="targetNominal" name="targetNominal" placeholder="Contoh: 10000000" required style="font-size: 16px; padding: 14px;">
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">💡 Tulis angka saja tanpa titik atau koma</p>
             </div>
+
             <div class="form-group">
-                <label for="nominalBerjalan">Nominal Berjalan</label>
-                <input type="number" id="nominalBerjalan" name="nominalBerjalan" placeholder="Rp (Opsional, default 0)">
+                <label for="nominalBerjalan" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    💵 Sudah Terkumpul Berapa? (Opsional)
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Jika sudah ada tabungan, isi di sini. Jika belum, kosongkan saja</p>
+                <input type="number" id="nominalBerjalan" name="nominalBerjalan" placeholder="Contoh: 5000000 (atau kosongkan)" style="font-size: 16px; padding: 14px;">
             </div>
+
             <div class="form-group">
-                <label for="tanggalTarget">Target Tanggal</label>
-                <input type="date" id="tanggalTarget" name="tanggalTarget" required>
+                <label for="tanggalTarget" style="font-size: 16px; font-weight: 700; color: #2C3E50;">
+                    📅 Kapan Target Tercapai? <span style="color: #ED6363;">*</span>
+                </label>
+                <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Pilih tanggal target Anda</p>
+                <input type="date" id="tanggalTarget" name="tanggalTarget" required style="font-size: 16px; padding: 14px;">
             </div>
-            <div class="form-actions">
-                <button type="submit" class="btn-save" id="form-submit-btn">Simpan</button>
-                <button type="button" class="btn-cancel" id="form-cancel-btn">Batal</button>
+
+            <div class="form-actions" style="margin-top: 30px;">
+                <button type="button" class="btn-cancel" id="form-cancel-btn" style="font-size: 16px; padding: 14px;">Batal</button>
+                <button type="submit" class="btn-save" id="form-submit-btn" style="font-size: 16px; padding: 14px;">💾 Simpan</button>
             </div>
         </form>
     </div>
@@ -171,17 +198,24 @@
     }
 
     .goals-list {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 25px;
+        margin-bottom: 25px;
     }
 
     .goal-card {
         background: white;
-        border-radius: 15px;
+        border-radius: 10px;
         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
         overflow: hidden;
-        border: 1px solid #E0E0E0;
+        border: 1px solid #5B9E9D;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .goal-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.25);
     }
 
     .goal-header {
@@ -207,16 +241,17 @@
         align-items: center;
         justify-content: center;
         font-size: 24px;
-        margin-right: 15px;
         flex-shrink: 0;
     }
 
     .goal-title {
         flex: 1;
+        text-align: center;
+        padding: 0 10px;
     }
 
     .goal-title h3 {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 600;
         margin: 0;
     }
@@ -228,28 +263,25 @@
         font-weight: 400;
     }
 
-    .goal-days {
-        font-size: 14px;
-        opacity: 0.9;
-        margin: 5px 0 0 0;
-    }
-
     .goal-actions {
         display: flex;
-        gap: 10px;
+        gap: 8px;
     }
 
     .goal-btn-edit,
     .goal-btn-delete {
         background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: none;
         color: white;
-        width: 36px;
-        height: 36px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         cursor: pointer;
-        font-size: 18px;
-        transition: background 0.3s;
+        font-size: 16px;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .goal-btn-edit:hover,
@@ -258,54 +290,47 @@
     }
 
     .goal-body {
-        padding: 20px;
+        padding: 20px 25px;
     }
 
     .goal-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        align-items: center;
+        display: flex;
+        justify-content: space-between;
         margin-bottom: 15px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #F0F0F0;
-    }
-
-    .goal-row:last-of-type {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-
-    .goal-label {
-        font-size: 16px;
-        color: #666;
-        font-weight: 500;
-    }
-
-    .goal-amount {
         font-size: 18px;
-        font-weight: 700;
-        color: #2C3E50;
-        text-align: right;
+    }
+
+    .goal-label, .goal-amount {
+        opacity: 0.7;
+        font-weight: 600;
     }
 
     .goal-progress {
-        margin-top: 15px;
+        margin-top: 20px;
     }
 
     .progress-bar {
         width: 100%;
-        height: 10px;
+        height: 15px;
         background: #E0E0E0;
-        border-radius: 10px;
+        border-radius: 20px;
         overflow: hidden;
     }
 
     .progress-fill {
         height: 100%;
         background: #6B9BD1;
+        border-radius: 20px;
         transition: width 0.3s ease;
+    }
+    
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        font-size: 14px;
+        opacity: 0.7;
+        font-weight: 600;
     }
 
     .goal-form-container {
@@ -375,20 +400,22 @@
         flex: 1;
         padding: 12px;
         border: none;
-        border-radius: 8px;
+        border-radius: 100px;
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: all 0.3s;
     }
 
     .btn-save {
-        background: #2A8576;
+        background: #00456A;
         color: white;
     }
 
     .btn-save:hover {
-        background: #1C5A50;
+        background: #003855;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 69, 106, 0.3);
     }
 
     .btn-save:disabled {
@@ -397,38 +424,127 @@
     }
 
     .btn-cancel {
-        background: #EEE;
-        color: #333;
+        background: #E3F5FF;
+        color: #00456A;
+        border: 1px solid #00456A;
     }
 
     .btn-cancel:hover {
-        background: #DDD;
+        background: #D0E9F5;
     }
 
     @media (max-width: 768px) {
+        /* Goals Actions */
+        .goals-actions {
+            width: 100% !important;
+            margin-bottom: 15px !important;
+        }
+
+        .btn-add-goal {
+            width: 100% !important;
+            text-align: center !important;
+        }
+
+        /* Goals List Responsive */
+        .goals-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .goal-card {
+            width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            border-radius: 12px !important;
+        }
+        
         .goal-header {
-            flex-direction: column;
-            align-items: flex-start;
+            padding: 12px 15px;
         }
-
-        .goal-actions {
-            margin-top: 10px;
-            width: 100%;
-            justify-content: flex-end;
+        
+        .goal-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
         }
-
+        
+        .goal-title h3 {
+            font-size: 18px;
+        }
+        
+        .goal-days {
+            font-size: 12px;
+        }
+        
+        .goal-btn-edit,
+        .goal-btn-delete {
+            width: 28px;
+            height: 28px;
+            font-size: 14px;
+        }
+        
+        .goal-body {
+            padding: 15px 20px;
+        }
+        
         .goal-row {
-            grid-template-columns: 1fr;
-            gap: 8px;
+            font-size: 16px;
+            margin-bottom: 12px;
         }
-
-        .goal-amount {
-            text-align: left;
+        
+        .goal-label, .goal-amount {
+            font-size: 16px;
+        }
+        
+        .progress-bar {
+            height: 12px;
+        }
+        
+        .progress-info {
+            font-size: 13px;
+            flex-wrap: wrap;
+            gap: 5px;
         }
 
         .goal-form {
             max-width: 100%;
             width: 95%;
+            padding: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .goal-form h3 {
+            font-size: 20px;
+        }
+        
+        .goal-form p {
+            font-size: 13px;
+        }
+        
+        .goal-form label {
+            font-size: 15px !important;
+        }
+        
+        .goal-form input {
+            font-size: 15px !important;
+            padding: 12px !important;
+        }
+        
+        .goal-form .form-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .goal-form .btn-save,
+        .goal-form .btn-cancel {
+            width: 100%;
+            font-size: 15px !important;
+            padding: 12px !important;
         }
     }
     /* Empty State */
@@ -487,8 +603,8 @@
     // Function to delete goal
     function deleteGoal(id) {
         Swal.fire({
-            title: 'Hapus Goals?',
-            text: 'Apakah Anda yakin ingin menghapus goals ini?',
+            title: 'Hapus Target?',
+            text: 'Apakah Anda yakin ingin menghapus target ini?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ED6363',
@@ -517,10 +633,10 @@
                         }
                         Swal.fire({
                             title: 'Terhapus!',
-                            text: 'Goal berhasil dihapus.',
+                            text: 'Target berhasil dihapus.',
                             icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
+                            confirmButtonColor: '#00456A',
+                            confirmButtonText: 'OK'
                         });
                     }
                 })
@@ -528,8 +644,10 @@
                     console.error('Error:', err);
                     Swal.fire({
                         title: 'Error!',
-                        text: 'Terjadi kesalahan saat menghapus goal',
-                        icon: 'error'
+                        text: 'Terjadi kesalahan saat menghapus target',
+                        icon: 'error',
+                        confirmButtonColor: '#00456A',
+                        confirmButtonText: 'OK'
                     });
                 });
             }
@@ -620,6 +738,16 @@
         goalsList.insertBefore(newCard, goalsList.firstChild);
     }
 
+    // Function to open goal modal (for add button)
+    function openGoalModal() {
+        formMode.value = 'add';
+        formGoalId.value = '';
+        formTitle.textContent = 'Tambah Goal Baru';
+        formSubmitBtn.textContent = 'Simpan';
+        goalForm.reset();
+        goalFormContainer.style.display = 'flex';
+    }
+
     // ===== EVENT HANDLERS WITH EVENT DELEGATION =====
     
     // Add goal button
@@ -698,15 +826,15 @@
                 }
                 
                 const messageText = isEditMode 
-                    ? 'Goal berhasil diperbarui.' 
-                    : 'Goal baru berhasil ditambahkan.';
+                    ? 'Target berhasil diperbarui.' 
+                    : 'Target baru berhasil ditambahkan.';
                 
                 Swal.fire({
                     title: 'Berhasil!',
                     text: messageText,
                     icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
                 });
                 
                 goalFormContainer.style.display = 'none';
@@ -725,17 +853,19 @@
             submitBtn.textContent = originalText;
             
             let errorMsg = isEditMode 
-                ? 'Terjadi kesalahan saat mengupdate goal' 
-                : 'Terjadi kesalahan saat menambahkan goal';
+                ? 'Terjadi kesalahan saat mengupdate target' 
+                : 'Terjadi kesalahan saat menambahkan target';
             
             if (err.message) {
                 errorMsg = err.message;
             }
             
             Swal.fire({
-                title: 'Perhatian!',
+                title: err.status === 'warning' ? 'Perhatian!' : 'Gagal!',
                 text: errorMsg,
-                icon: err.status === 'warning' ? 'warning' : 'error'
+                icon: err.status === 'warning' ? 'warning' : 'error',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
             });
         });
     });

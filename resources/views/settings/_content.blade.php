@@ -1,7 +1,9 @@
 <!-- Header -->
 <div class="header">
-    <h1>Pengaturan Akun</h1>
-    <p>Kelola informasi akun Anda</p>
+    <div class="header-text">
+        <h1>Pengaturan Akun</h1>
+        <p>Kelola informasi akun Anda</p>
+    </div>
 </div>
 
 <!-- Settings Card -->
@@ -47,6 +49,21 @@
             </button>
         </div>
     </form>
+
+    <!-- Logout Section -->
+    <hr style="margin: 40px 0; border: none; border-top: 2px solid #E3F5FF;">
+    
+    <div class="logout-section">
+        <h2 style="color: #ED6363; margin-bottom: 15px;">🚪 Keluar Aplikasi</h2>
+        <p style="color: #666; margin-bottom: 20px;">Tekan tombol di bawah untuk keluar dari akun Anda.</p>
+        
+        <form id="logoutForm" action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="button" class="btn btn-logout" onclick="confirmLogout()">
+                🚪 KELUAR DARI APLIKASI
+            </button>
+        </form>
+    </div>
 </div>
 
 <style>
@@ -96,6 +113,73 @@
         .btn {
             width: 100%;
             justify-content: center;
+        }
+    }
+
+    /* Logout Section */
+    .logout-section {
+        text-align: center;
+        padding: 20px;
+        background: #FFF5F5;
+        border-radius: 15px;
+        border: 2px solid #ED6363;
+    }
+
+    .btn-logout {
+        background: #ED6363;
+        color: white;
+        border: none;
+        padding: 18px 40px;
+        border-radius: 100px;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-logout:hover {
+        background: #D32F2F;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(237, 99, 99, 0.4);
+    }
+
+    /* Mobile adjustments for settings */
+    @media (max-width: 768px) {
+        .settings-card {
+            padding: 15px !important;
+            margin: 0 !important;
+        }
+
+        .settings-card h2 {
+            font-size: 18px !important;
+            margin-bottom: 15px !important;
+        }
+
+        .logout-section {
+            padding: 15px !important;
+            margin-top: 20px !important;
+        }
+
+        .logout-section h2 {
+            font-size: 16px !important;
+        }
+
+        .logout-section p {
+            font-size: 13px !important;
+            margin-bottom: 15px !important;
+        }
+
+        .btn-logout {
+            padding: 14px 25px !important;
+            font-size: 14px !important;
+            width: 100% !important;
+        }
+
+        hr {
+            margin: 20px 0 !important;
         }
     }
 </style>
@@ -156,4 +240,22 @@
             alert('❌ Terjadi kesalahan. Silakan coba lagi.');
         }
     });
+
+    // Confirm Logout
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Keluar dari Aplikasi?',
+            text: 'Apakah Anda yakin ingin keluar?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ED6363',
+            cancelButtonColor: '#999',
+            confirmButtonText: 'Ya, Keluar',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logoutForm').submit();
+            }
+        });
+    }
 </script>

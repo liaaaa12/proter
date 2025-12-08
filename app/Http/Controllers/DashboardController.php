@@ -30,16 +30,32 @@ class DashboardController extends Controller
         // Calculate saldo
         $saldo = $totalPemasukan - $totalPengeluaran;
 
-        // Get first goal (target)
-        $goal = DB::table('goals')
+        // Get all goals and calculate their progress
+        $allGoals = DB::table('goals')
             ->where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->first();
+            ->get();
 
-        // Calculate goal percentage
+        $goal = null;
         $goalPercentage = 0;
-        if ($goal && $goal->targetNominal > 0) {
-            $goalPercentage = ($goal->nominalBerjalan / $goal->targetNominal) * 100;
+
+        if ($allGoals->isNotEmpty()) {
+            // Calculate nominalBerjalan from transactions for each goal
+            $goalsWithProgress = $allGoals->map(function($g) use ($userId) {
+                // Sum all transactions allocated to this goal
+                $nominalBerjalan = DB::table('transaction')
+                    ->where('user_id', $userId)
+                    ->where('goal_id', $g->id)
+                    ->sum('jumlah');
+                
+                $g->nominalBerjalan = $nominalBerjalan;
+                $g->percentage = $g->targetNominal > 0 ? ($nominalBerjalan / $g->targetNominal) * 100 : 0;
+                
+                return $g;
+            });
+
+            // Get goal with highest percentage (closest to completion)
+            $goal = $goalsWithProgress->sortByDesc('percentage')->first();
+            $goalPercentage = $goal ? $goal->percentage : 0;
         }
 
         // Get recent transactions (5 latest)
@@ -50,7 +66,7 @@ class DashboardController extends Controller
             ->get();
 
         // Get all budgets for dropdown
-        $budgets = DB::table('budget')
+        $allBudgets = DB::table('budget')
             ->where('user_id', $userId)
             ->get();
 
@@ -66,7 +82,7 @@ class DashboardController extends Controller
             'goal',
             'goalPercentage',
             'recentTransactions',
-            'budgets',
+            'allBudgets',
             'goals'
         ));
     }
