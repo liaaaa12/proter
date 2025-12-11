@@ -789,6 +789,7 @@
             audioChunks: [],
             audioBlob: null,
             audioUrl: null,
+            wavBlob: null,
             recordingTimer: 0,
             recordingInterval: null,
 
@@ -800,16 +801,13 @@
                     this.mediaRecorder.ondataavailable = (event) => {
                         this.audioChunks.push(event.data);
                     };
-                    this.mediaRecorder.onstop = () => {
+                    this.mediaRecorder.onstop = async () => {
                         this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
                         this.audioUrl = URL.createObjectURL(this.audioBlob);
-                        const reader = new FileReader();
-                        reader.readAsDataURL(this.audioBlob);
-                        reader.onloadend = () => {
-                            document.getElementById('register-voice-input').value = reader.result;
-                            document.getElementById('register-submit-btn').disabled = false;
-                        };
-                        this.updateUI('recorded');
+                        
+                        // Convert to WAV format
+                        await this.convertToWav();
+                        
                         stream.getTracks().forEach(track => track.stop());
                     };
                     this.mediaRecorder.start();
@@ -827,6 +825,93 @@
                 }
             },
 
+            async convertToWav() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const arrayBuffer = await this.audioBlob.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    
+                    // Resample to 16kHz mono
+                    const targetSampleRate = 16000;
+                    const offlineContext = new OfflineAudioContext(
+                        1, // mono
+                        audioBuffer.duration * targetSampleRate,
+                        targetSampleRate
+                    );
+                    
+                    const source = offlineContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(offlineContext.destination);
+                    source.start();
+                    
+                    const resampledBuffer = await offlineContext.startRendering();
+                    
+                    // Convert to WAV
+                    const wavData = this.audioBufferToWav(resampledBuffer);
+                    this.wavBlob = new Blob([wavData], { type: 'audio/wav' });
+                    
+                    // Convert to base64
+                    const reader = new FileReader();
+                    reader.readAsDataURL(this.wavBlob);
+                    reader.onloadend = () => {
+                        document.getElementById('register-voice-input').value = reader.result;
+                        document.getElementById('register-submit-btn').disabled = false;
+                        this.updateUI('recorded');
+                    };
+                } catch (error) {
+                    console.error('Error converting to WAV:', error);
+                    alert('Gagal mengkonversi audio: ' + error.message);
+                }
+            },
+
+            audioBufferToWav(buffer) {
+                const numChannels = buffer.numberOfChannels;
+                const sampleRate = buffer.sampleRate;
+                const format = 1; // PCM
+                const bitDepth = 16;
+                
+                const bytesPerSample = bitDepth / 8;
+                const blockAlign = numChannels * bytesPerSample;
+                
+                const data = buffer.getChannelData(0);
+                const dataLength = data.length * bytesPerSample;
+                const buffer_size = 44 + dataLength;
+                
+                const arrayBuffer = new ArrayBuffer(buffer_size);
+                const view = new DataView(arrayBuffer);
+                
+                // WAV header
+                const writeString = (offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+                
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + dataLength, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, format, true);
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * blockAlign, true);
+                view.setUint16(32, blockAlign, true);
+                view.setUint16(34, bitDepth, true);
+                writeString(36, 'data');
+                view.setUint32(40, dataLength, true);
+                
+                // Write PCM samples
+                let offset = 44;
+                for (let i = 0; i < data.length; i++) {
+                    const sample = Math.max(-1, Math.min(1, data[i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+                
+                return arrayBuffer;
+            },
+
             stopRecording() {
                 if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
                     this.mediaRecorder.stop();
@@ -837,12 +922,12 @@
             playRecording() {
                 if (this.audioUrl) {
                     const audio = new Audio(this.audioUrl);
-                     audio.play().then(() => {
+                    audio.play().then(() => {
                         console.log('✅ Playing audio');
                     }).catch(err => {
-                    console.error('❌ Play failed:', err);
-                    alert('Gagal memutar: ' + err.message);
-            });
+                        console.error('❌ Play failed:', err);
+                        alert('Gagal memutar: ' + err.message);
+                    });
                 }
             },
 
@@ -852,6 +937,7 @@
                 }
                 this.audioChunks = [];
                 this.audioBlob = null;
+                this.wavBlob = null;
                 this.audioUrl = null;
                 this.recordingTimer = 0;
                 document.getElementById('register-voice-input').value = '';
@@ -867,13 +953,21 @@
                 const stopBtn = document.getElementById('register-stop-btn');
                 const playBtn = document.getElementById('register-play-btn');
                 const resetBtn = document.getElementById('register-reset-btn');
-                recorder.classList.remove('recording', 'recorded');
+                recorder.classList.remove('recording', 'recorded', 'converting');
                 if (state === 'recording') {
                     recorder.classList.add('recording');
                     status.textContent = '🔴 Sedang merekam... Berbicara dengan jelas';
                     timer.style.display = 'block';
                     startBtn.style.display = 'none';
                     stopBtn.style.display = 'inline-block';
+                    playBtn.style.display = 'none';
+                    resetBtn.style.display = 'none';
+                } else if (state === 'converting') {
+                    recorder.classList.add('converting');
+                    status.textContent = '⏳ Mengkonversi audio...';
+                    timer.style.display = 'block';
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'none';
                     playBtn.style.display = 'none';
                     resetBtn.style.display = 'none';
                 } else if (state === 'recorded') {
@@ -901,6 +995,7 @@
             audioChunks: [],
             audioBlob: null,
             audioUrl: null,
+            wavBlob: null,
             recordingTimer: 0,
             recordingInterval: null,
 
@@ -912,16 +1007,13 @@
                     this.mediaRecorder.ondataavailable = (event) => {
                         this.audioChunks.push(event.data);
                     };
-                    this.mediaRecorder.onstop = () => {
+                    this.mediaRecorder.onstop = async () => {
                         this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
                         this.audioUrl = URL.createObjectURL(this.audioBlob);
-                        const reader = new FileReader();
-                        reader.readAsDataURL(this.audioBlob);
-                        reader.onloadend = () => {
-                            document.getElementById('voice-login-input').value = reader.result;
-                            document.getElementById('voice-login-submit-btn').disabled = false;
-                        };
-                        this.updateUI('recorded');
+                        
+                        // Convert to WAV format
+                        await this.convertToWav();
+                        
                         stream.getTracks().forEach(track => track.stop());
                     };
                     this.mediaRecorder.start();
@@ -937,6 +1029,94 @@
                 } catch (error) {
                     alert('Gagal mengakses mikrofon: ' + error.message);
                 }
+            },
+
+            async convertToWav() {
+                try {
+                    this.updateUI('converting');
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const arrayBuffer = await this.audioBlob.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    
+                    // Resample to 16kHz mono
+                    const targetSampleRate = 16000;
+                    const offlineContext = new OfflineAudioContext(
+                        1, // mono
+                        audioBuffer.duration * targetSampleRate,
+                        targetSampleRate
+                    );
+                    
+                    const source = offlineContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(offlineContext.destination);
+                    source.start();
+                    
+                    const resampledBuffer = await offlineContext.startRendering();
+                    
+                    // Convert to WAV
+                    const wavData = this.audioBufferToWav(resampledBuffer);
+                    this.wavBlob = new Blob([wavData], { type: 'audio/wav' });
+                    
+                    // Convert to base64
+                    const reader = new FileReader();
+                    reader.readAsDataURL(this.wavBlob);
+                    reader.onloadend = () => {
+                        document.getElementById('voice-login-input').value = reader.result;
+                        document.getElementById('voice-login-submit-btn').disabled = false;
+                        this.updateUI('recorded');
+                    };
+                } catch (error) {
+                    console.error('Error converting to WAV:', error);
+                    alert('Gagal mengkonversi audio: ' + error.message);
+                }
+            },
+
+            audioBufferToWav(buffer) {
+                const numChannels = buffer.numberOfChannels;
+                const sampleRate = buffer.sampleRate;
+                const format = 1; // PCM
+                const bitDepth = 16;
+                
+                const bytesPerSample = bitDepth / 8;
+                const blockAlign = numChannels * bytesPerSample;
+                
+                const data = buffer.getChannelData(0);
+                const dataLength = data.length * bytesPerSample;
+                const buffer_size = 44 + dataLength;
+                
+                const arrayBuffer = new ArrayBuffer(buffer_size);
+                const view = new DataView(arrayBuffer);
+                
+                // WAV header
+                const writeString = (offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+                
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + dataLength, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, format, true);
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * blockAlign, true);
+                view.setUint16(32, blockAlign, true);
+                view.setUint16(34, bitDepth, true);
+                writeString(36, 'data');
+                view.setUint32(40, dataLength, true);
+                
+                // Write PCM samples
+                let offset = 44;
+                for (let i = 0; i < data.length; i++) {
+                    const sample = Math.max(-1, Math.min(1, data[i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+                
+                return arrayBuffer;
             },
 
             stopRecording() {
@@ -959,6 +1139,7 @@
                 }
                 this.audioChunks = [];
                 this.audioBlob = null;
+                this.wavBlob = null;
                 this.audioUrl = null;
                 this.recordingTimer = 0;
                 document.getElementById('voice-login-input').value = '';
@@ -974,13 +1155,21 @@
                 const stopBtn = document.getElementById('voice-login-stop-btn');
                 const playBtn = document.getElementById('voice-login-play-btn');
                 const resetBtn = document.getElementById('voice-login-reset-btn');
-                recorder.classList.remove('recording', 'recorded');
+                recorder.classList.remove('recording', 'recorded', 'converting');
                 if (state === 'recording') {
                     recorder.classList.add('recording');
                     status.textContent = '🔴 Sedang merekam... Berbicara dengan jelas';
                     timer.style.display = 'block';
                     startBtn.style.display = 'none';
                     stopBtn.style.display = 'inline-block';
+                    playBtn.style.display = 'none';
+                    resetBtn.style.display = 'none';
+                } else if (state === 'converting') {
+                    recorder.classList.add('converting');
+                    status.textContent = '⏳ Mengkonversi audio...';
+                    timer.style.display = 'block';
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'none';
                     playBtn.style.display = 'none';
                     resetBtn.style.display = 'none';
                 } else if (state === 'recorded') {
@@ -1021,5 +1210,8 @@
             }
         });
     </script>
+
+    <!-- Audio Processing Library -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 </body>
 </html>

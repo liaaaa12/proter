@@ -41,10 +41,20 @@ class AuthController extends Controller
         // Custom validation untuk voice audio (terima file ATAU base64)
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:20', 'unique:users'],
+            'phone' => ['required', 'numeric', 'digits_between:10,15', 'unique:users'],
             'password' => ['required', 'confirmed', Password::min(8)],
             'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
             'voice_audio_base64' => ['nullable', 'string'],
+        ], [
+            'name.required' => 'Nama wajib diisi',
+            'name.max' => 'Nama maksimal 255 karakter',
+            'phone.required' => 'Nomor telepon wajib diisi',
+            'phone.numeric' => 'Nomor telepon harus berupa angka',
+            'phone.digits_between' => 'Nomor telepon harus 10-15 digit',
+            'phone.unique' => 'Nomor telepon sudah terdaftar',
+            'password.required' => 'Kata sandi wajib diisi',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok',
+            'password.min' => 'Kata sandi minimal 8 karakter',
         ]);
 
         // Validasi tambahan: minimal salah satu harus ada
@@ -121,6 +131,9 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'phone' => ['required', 'string'],
             'password' => ['required', 'string'],
+        ], [
+            'phone.required' => 'Nama atau nomor telepon wajib diisi',
+            'password.required' => 'Kata sandi wajib diisi',
         ]);
 
         if ($validator->fails()) {
@@ -174,6 +187,10 @@ class AuthController extends Controller
             'phone' => ['required', 'string'],
             'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
             'voice_audio_base64' => ['nullable', 'string'],
+        ], [
+            'phone.required' => 'Nama atau nomor telepon wajib diisi',
+            'voice_audio_file.mimes' => 'Format audio tidak didukung',
+            'voice_audio_file.max' => 'Ukuran file audio maksimal 10MB',
         ]);
 
         // Validasi tambahan
@@ -317,9 +334,9 @@ class AuthController extends Controller
             // Get full path untuk Python script
             $fullPath = Storage::disk('public')->path($savedPath);
             
-            // Konversi ke WAV jika perlu
+            // Konversi ke WAV jika perlu (seharusnya sudah WAV dari browser)
             if (strtolower($extension) !== 'wav') {
-                Log::info('🔄 Starting FFmpeg conversion...');
+                Log::info('⚠️ File bukan WAV, akan mencoba konversi: ' . $extension);
                 
                 try {
                     $convertedPath = $this->voiceAuthService->convertToWav($fullPath);
@@ -332,23 +349,26 @@ class AuthController extends Controller
                     }
                     
                     if ($convertedPath === $fullPath) {
-                        throw new \Exception('Konversi tidak menghasilkan file baru');
+                        Log::warning('⚠️ Konversi tidak menghasilkan file baru, menggunakan file asli');
+                        // Lanjutkan dengan file asli, biarkan Python mencoba memproses
+                    } else {
+                        $wavSize = filesize($convertedPath);
+                        Log::info('✅ WAV created! Size: ' . $wavSize . ' bytes');
+                        
+                        if ($wavSize < 1000) {
+                            throw new \Exception('File WAV terlalu kecil: ' . $wavSize . ' bytes');
+                        }
+                        
+                        // Update path
+                        $fullPath = $convertedPath;
+                        $savedPath = 'voices/' . basename($convertedPath);
                     }
-                    
-                    $wavSize = filesize($convertedPath);
-                    Log::info('✅ WAV created! Size: ' . $wavSize . ' bytes');
-                    
-                    if ($wavSize < 1000) {
-                        throw new \Exception('File WAV terlalu kecil: ' . $wavSize . ' bytes');
-                    }
-                    
-                    // Update path
-                    $fullPath = $convertedPath;
-                    $savedPath = 'voices/' . basename($convertedPath);
             }  catch (\Exception $e) {
                 Log::error('❌ Konversi gagal: ' . $e->getMessage());
                 throw new \Exception('Gagal konversi audio ke WAV: ' . $e->getMessage());
             }
+        } else {
+            Log::info('✅ File sudah dalam format WAV (browser-side conversion)');
         }
             
             // Call Python script to extract features

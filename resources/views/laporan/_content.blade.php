@@ -104,17 +104,17 @@
         <table>
             <thead>
                 <tr>
-                    <th>Tanggal</th>
-                    <th>Kategori</th>
-                    <th>Nominal</th>
-                    <th>Saldo</th>
-                    <th>Catatan</th>
-                    <th>Aksi</th>
+                    <th style="text-align: left;">Tanggal</th>
+                    <th style="text-align: left;">Kategori</th>
+                    <th style="text-align: left;">Nominal</th>
+                    <th style="text-align: left;">Saldo</th>
+                    <th style="text-align: left;">Catatan</th>
+                    <th style="text-align: left;">Aksi</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                    <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
                         Pilih periode dan klik "Cari" untuk menampilkan data
                     </td>
                 </tr>
@@ -136,7 +136,9 @@
             
             <div class="form-group">
                 <label for="editTanggal">Tanggal *</label>
-                <input type="date" id="editTanggal" required>
+                <input type="text" id="editTanggal" placeholder="DD/MM/YYYY" required pattern="\d{2}/\d{2}/\d{4}">
+                <input type="hidden" id="editTanggalISO">
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">Format: DD/MM/YYYY (contoh: 15/12/2024)</p>
             </div>
 
             <div class="form-group">
@@ -174,6 +176,22 @@
             <div class="form-group">
                 <label for="editKeterangan">Keterangan *</label>
                 <textarea id="editKeterangan" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="editBudget">Anggaran (Opsional)</label>
+                <select id="editBudget">
+                    <option value="">-- Tidak Ada --</option>
+                </select>
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">Alokasikan ke anggaran tertentu</p>
+            </div>
+
+            <div class="form-group">
+                <label for="editGoal">Target (Opsional)</label>
+                <select id="editGoal">
+                    <option value="">-- Tidak Ada --</option>
+                </select>
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">Alokasikan ke target tertentu</p>
             </div>
 
             <div class="modal-actions">
@@ -390,7 +408,7 @@
 
     th {
         padding: 15px 20px;
-        text-align: center;
+        text-align: left;
         font-size: 16px;
         font-weight: 600;
         white-space: nowrap;
@@ -398,13 +416,13 @@
 
     td {
         padding: 15px 20px;
-        text-align: center;
+        text-align: left;
         font-size: 16px;
         border-bottom: 1px solid #E3F5FF;
         vertical-align: middle;
     }
 
-    /* Nominal and Saldo columns - keep monospace font */
+    /* Nominal and Saldo columns - monospace font for better readability */
     td:nth-child(3), td:nth-child(4) {
         font-family: 'Consolas', 'Monaco', monospace;
         font-weight: 600;
@@ -629,9 +647,12 @@
                         <button class="btn-action btn-edit" onclick="editTransaction(${trx.id}, '${trx.jenis}', '${trx.kategori}', ${nominal}, '${trx.keterangan}', '${trx.tanggal}')" title="Edit">
                             ✏️
                         </button>
+                        
+                        <!-- TOMBOL HAPUS DISEMBUNYIKAN - Uncomment untuk mengaktifkan kembali
                         <button class="btn-action btn-delete" onclick="deleteTransaction(${trx.id})" title="Hapus">
                             🗑️
                         </button>
+                        -->
                     </td>
                 </tr>
             `;
@@ -704,15 +725,61 @@
     }
 
     // Edit Transaction
-    function editTransaction(id, jenis, kategori, jumlah, keterangan, tanggal) {
+    async function editTransaction(id, jenis, kategori, jumlah, keterangan, tanggal) {
         document.getElementById('editId').value = id;
-        document.getElementById('editTanggal').value = tanggal;
+        
+        // Convert tanggal dari YYYY-MM-DD ke DD/MM/YYYY untuk display
+        if (tanggal) {
+            const dateObj = new Date(tanggal);
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            
+            // Set format DD/MM/YYYY untuk display
+            document.getElementById('editTanggal').value = `${day}/${month}/${year}`;
+            // Simpan format ISO di hidden field untuk backend
+            document.getElementById('editTanggalISO').value = `${year}-${month}-${day}`;
+        }
+        
         document.getElementById('editJenis').value = jenis;
         document.getElementById('editKategori').value = kategori;
         document.getElementById('editJumlah').value = jumlah;
         document.getElementById('editKeterangan').value = keterangan;
         
+        // Load budgets and goals
+        await loadEditDropdowns(id);
+        
         document.getElementById('editModal').style.display = 'flex';
+    }
+
+    // Load budgets and goals for edit modal
+    async function loadEditDropdowns(transactionId) {
+        try {
+            // Fetch Budgets
+            const budgetResponse = await fetch('/api/budgets');
+            const budgetData = await budgetResponse.json();
+            if (budgetData.success) {
+                const budgetSelect = document.getElementById('editBudget');
+                budgetSelect.innerHTML = '<option value="">-- Tidak Ada --</option>';
+                budgetData.data.forEach(b => {
+                    budgetSelect.innerHTML += `<option value="${b.id}">${b.namaBudget}</option>`;
+                });
+            }
+
+            // Fetch Goals
+            const goalResponse = await fetch('/api/goals');
+            const goalData = await goalResponse.json();
+            if (goalData.success) {
+                const goalSelect = document.getElementById('editGoal');
+                goalSelect.innerHTML = '<option value="">-- Tidak Ada --</option>';
+                goalData.data.forEach(g => {
+                    goalSelect.innerHTML += `<option value="${g.id}">${g.namaGoal}</option>`;
+                });
+            }
+        } catch (e) {
+            console.error('Error loading dropdowns:', e);
+            // Jika error, tetap tampilkan modal tapi dropdown kosong
+        }
     }
 
     function closeEditModal() {
@@ -723,12 +790,30 @@
         event.preventDefault();
 
         const id = document.getElementById('editId').value;
+        
+        // Convert tanggal dari DD/MM/YYYY ke YYYY-MM-DD untuk backend
+        const tanggalDisplay = document.getElementById('editTanggal').value;
+        let tanggalISO = document.getElementById('editTanggalISO').value;
+        
+        // Jika user ubah tanggal, parse dari format DD/MM/YYYY
+        if (tanggalDisplay) {
+            const parts = tanggalDisplay.split('/');
+            if (parts.length === 3) {
+                const day = parts[0];
+                const month = parts[1];
+                const year = parts[2];
+                tanggalISO = `${year}-${month}-${day}`;
+            }
+        }
+        
         const data = {
-            tanggal: document.getElementById('editTanggal').value,
+            tanggal: tanggalISO,
             jenis: document.getElementById('editJenis').value,
             kategori: document.getElementById('editKategori').value,
             jumlah: parseFloat(document.getElementById('editJumlah').value),
-            keterangan: document.getElementById('editKeterangan').value
+            keterangan: document.getElementById('editKeterangan').value,
+            budget_id: document.getElementById('editBudget').value || null,
+            goal_id: document.getElementById('editGoal').value || null
         };
 
         try {

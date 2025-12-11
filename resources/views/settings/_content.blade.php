@@ -27,15 +27,22 @@
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #E3F5FF;">
 
         <h2 style="margin-bottom: 20px;">Ubah Password (Opsional)</h2>
+        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">💡 Isi semua field di bawah jika ingin mengubah password</p>
+
+        <div class="form-group">
+            <label for="current_password">Password Lama *</label>
+            <input type="password" id="current_password" name="current_password" placeholder="Masukkan password lama Anda">
+            <p style="font-size: 12px; color: #999; margin-top: 5px;">Wajib diisi jika ingin mengubah password</p>
+        </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label for="password">Password Baru</label>
-                <input type="password" id="password" name="password" placeholder="Kosongkan jika tidak ingin mengubah">
+                <label for="password">Password Baru *</label>
+                <input type="password" id="password" name="password" placeholder="Masukkan password baru">
             </div>
 
             <div class="form-group">
-                <label for="password_confirmation">Konfirmasi Password</label>
+                <label for="password_confirmation">Konfirmasi Password Baru *</label>
                 <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Ulangi password baru">
             </div>
         </div>
@@ -182,6 +189,35 @@
             margin: 20px 0 !important;
         }
     }
+
+    /* Loading Spinner */
+    .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        flex-shrink: 0;  /* Prevent shrinking */
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    button[type="submit"]:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Ensure button text stays centered during loading */
+    button[type="submit"] {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
 </style>
 
 <script>
@@ -193,15 +229,57 @@
         const formData = {
             name: document.getElementById('name').value,
             phone: document.getElementById('phone').value,
+            current_password: document.getElementById('current_password').value,
             password: document.getElementById('password').value,
             password_confirmation: document.getElementById('password_confirmation').value
         };
 
-        // Validate password confirmation
-        if (formData.password && formData.password !== formData.password_confirmation) {
-            alert('Password dan konfirmasi password tidak sama');
-            return;
+        // Validate password fields
+        if (formData.password || formData.current_password || formData.password_confirmation) {
+            // Jika salah satu field password diisi, semua harus diisi
+            if (!formData.current_password) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Password Lama Diperlukan',
+                    text: 'Password lama harus diisi jika ingin mengubah password',
+                    confirmButtonColor: '#00456A'
+                });
+                return;
+            }
+            if (!formData.password) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Password Baru Diperlukan',
+                    text: 'Password baru harus diisi',
+                    confirmButtonColor: '#00456A'
+                });
+                return;
+            }
+            if (!formData.password_confirmation) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Konfirmasi Password Diperlukan',
+                    text: 'Konfirmasi password baru harus diisi',
+                    confirmButtonColor: '#00456A'
+                });
+                return;
+            }
+            if (formData.password !== formData.password_confirmation) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Password Tidak Sama',
+                    text: 'Password baru dan konfirmasi password tidak sama',
+                    confirmButtonColor: '#00456A'
+                });
+                return;
+            }
         }
+
+        // Show loading
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span style="display: flex; align-items: center; gap: 8px;"><span class="spinner"></span><span>Menyimpan...</span></span>';
 
         try {
             // Get CSRF token
@@ -220,24 +298,53 @@
 
             const result = await response.json();
 
+            // Hide loading
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+
             if (result.success) {
-                alert('✅ ' + result.message);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: result.message,
+                    confirmButtonColor: '#00456A'
+                });
                 
                 // Clear password fields
+                document.getElementById('current_password').value = '';
                 document.getElementById('password').value = '';
                 document.getElementById('password_confirmation').value = '';
             } else {
                 if (result.errors) {
                     const firstError = Object.values(result.errors)[0][0];
-                    alert('❌ ' + firstError);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: firstError,
+                        confirmButtonColor: '#00456A'
+                    });
                 } else {
-                    alert('❌ ' + result.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: result.message,
+                        confirmButtonColor: '#00456A'
+                    });
                 }
             }
 
         } catch (error) {
+            // Hide loading
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            
             console.error('Error:', error);
-            alert('❌ Terjadi kesalahan. Silakan coba lagi.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Terjadi Kesalahan',
+                text: 'Silakan coba lagi.',
+                confirmButtonColor: '#00456A'
+            });
         }
     });
 

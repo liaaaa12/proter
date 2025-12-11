@@ -4,7 +4,7 @@
         <h1>Anggaran</h1>
         <p>💡 Atur anggaran bulanan Anda agar keuangan lebih terkontrol!</p>
     </div>
-    <button class="voice-btn" id="voiceBtn">
+    <button class="voice-btn voice-btn-header" onclick="startVoiceRecording()">
         <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
             <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
         </svg>
@@ -110,8 +110,9 @@
                     💵 Berapa Anggarannya? <span style="color: #ED6363;">*</span>
                 </label>
                 <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Total uang yang dialokasikan untuk kategori ini</p>
-                <input type="number" id="jumlah" name="jumlah" placeholder="Contoh: 2000000" required min="0" step="1000" style="font-size: 16px; padding: 14px;">
-                <p style="font-size: 12px; color: #999; margin-top: 5px;">💡 Tulis angka saja tanpa titik atau koma</p>
+                <input type="text" id="jumlah" name="jumlah" placeholder="Contoh: 2.000.000" required style="font-size: 16px; padding: 14px;">
+                <input type="hidden" id="jumlah_raw" name="jumlah_raw">
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">💡 Angka akan otomatis diformat dengan pemisah ribuan</p>
             </div>
 
             <div class="form-group" id="periodeGroup">
@@ -433,7 +434,8 @@
             width: 95%;
             max-width: 95%;
             padding: 20px;
-            max-height: 90vh;
+            padding-bottom: 80px; /* Extra space for bottom navbar */
+            max-height: 85vh; /* Reduced to ensure scrollability */
             overflow-y: auto;
         }
         
@@ -458,6 +460,7 @@
         .modal-actions {
             flex-direction: column;
             gap: 10px;
+            margin-bottom: 15px; /* Extra margin at bottom */
         }
         
         .modal-actions .btn {
@@ -672,4 +675,143 @@
     function closeHistoryModal() {
         document.getElementById('historyModal').classList.remove('active');
     }
+
+    // ========== RUPIAH FORMATTING FUNCTIONS ==========
+    
+    function formatRupiah(angka) {
+        if (!angka) return '';
+        const number = typeof angka === 'string' ? parseFloat(angka.replace(/\./g, '')) : angka;
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function unformatRupiah(formatted) {
+        if (!formatted) return 0;
+        const cleaned = formatted.toString().replace(/\./g, '');
+        return parseFloat(cleaned) || 0;
+    }
+
+    // Update saveBudget untuk parse formatted number
+    const originalSaveBudget = saveBudget;
+    saveBudget = async function(event) {
+        event.preventDefault();
+
+        const budgetId = document.getElementById('budgetId').value;
+        const jumlahFormatted = document.getElementById('jumlah').value;
+        const jumlahRaw = unformatRupiah(jumlahFormatted);
+        
+        // Validasi: jumlah tidak boleh 0 atau negatif
+        if (!jumlahRaw || jumlahRaw <= 0) {
+            Swal.fire({
+                title: 'Peringatan!',
+                text: 'Jumlah anggaran harus lebih dari 0!',
+                icon: 'warning',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        const formData = {
+            namaBudget: document.getElementById('namaBudget').value,
+            kategori: document.getElementById('kategori').value,
+            jumlah: jumlahRaw,
+            periode: document.getElementById('periode').value,
+        };
+
+        try {
+            const url = isEditMode ? `/api/budget/${budgetId}` : '/api/budget';
+            const method = isEditMode ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeModal();
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: isEditMode ? 'Anggaran berhasil diperbarui.' : 'Anggaran baru berhasil ditambahkan.',
+                    icon: 'success',
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: result.message || 'Gagal menyimpan anggaran',
+                    icon: 'error',
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
+                });
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Terjadi kesalahan saat menyimpan anggaran',
+                icon: 'error',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
+            });
+        }
+    };
+
+    // Update openEditModal untuk format jumlah
+    const originalOpenEditModal = openEditModal;
+    openEditModal = function(budget) {
+        isEditMode = true;
+        document.getElementById('modalTitle').textContent = 'Edit Anggaran';
+        document.getElementById('budgetId').value = budget.id;
+        document.getElementById('namaBudget').value = budget.namaBudget;
+        document.getElementById('kategori').value = budget.kategori;
+        document.getElementById('jumlah').value = formatRupiah(budget.jumlah);
+        document.getElementById('periode').value = budget.periode;
+        document.getElementById('periodeGroup').style.display = 'none';
+        document.getElementById('budgetModal').classList.add('active');
+    };
+
+    // Event listener untuk auto-format
+    document.addEventListener('DOMContentLoaded', function() {
+        const jumlahInput = document.getElementById('jumlah');
+        
+        if (jumlahInput) {
+            jumlahInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\./g, '');
+                value = value.replace(/[^\d]/g, '');
+                
+                if (value) {
+                    e.target.value = formatRupiah(value);
+                    document.getElementById('jumlah_raw').value = value;
+                } else {
+                    e.target.value = '';
+                    document.getElementById('jumlah_raw').value = '';
+                }
+            });
+            
+            jumlahInput.addEventListener('keypress', function(e) {
+                if ([8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                    (e.keyCode === 65 && e.ctrlKey === true) ||
+                    (e.keyCode === 67 && e.ctrlKey === true) ||
+                    (e.keyCode === 86 && e.ctrlKey === true) ||
+                    (e.keyCode === 88 && e.ctrlKey === true)) {
+                    return;
+                }
+                
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
 </script>
