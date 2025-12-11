@@ -24,18 +24,36 @@ def extract_mfcc_features(audio_path, n_mfcc=13, duration=None):
         numpy array of MFCC features (averaged)
     """
     try:
-        # Load audio file
+        # Load audio file - 5 detik optimal untuk keamanan & kecepatan
         y, sr = librosa.load(audio_path, duration=duration, sr=16000)
         
-        # Extract MFCC features
+        # 1. Extract MFCC features (karakteristik spektral)
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
-        
-        # Calculate statistics (mean and std for each coefficient)
         mfcc_mean = np.mean(mfcc, axis=1)
         mfcc_std = np.std(mfcc, axis=1)
         
-        # Combine mean and std
-        features = np.concatenate([mfcc_mean, mfcc_std])
+        # 2. Extract Pitch (F0) - karakteristik fundamental frequency pita suara
+        pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
+        pitch_mean = np.mean(pitches[pitches > 0]) if np.any(pitches > 0) else 0
+        pitch_std = np.std(pitches[pitches > 0]) if np.any(pitches > 0) else 0
+        
+        # 3. Extract Spectral Contrast - perbedaan energi antar frekuensi
+        spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+        contrast_mean = np.mean(spectral_contrast, axis=1)
+        contrast_std = np.std(spectral_contrast, axis=1)
+        
+        # 4. Extract Zero Crossing Rate - karakteristik perubahan sinyal
+        zcr = librosa.feature.zero_crossing_rate(y)
+        zcr_mean = np.mean(zcr)
+        zcr_std = np.std(zcr)
+        
+        # Combine all features untuk fingerprint yang lebih unik
+        features = np.concatenate([
+            mfcc_mean, mfcc_std,           # 26 features
+            [pitch_mean, pitch_std],       # 2 features
+            contrast_mean, contrast_std,   # 14 features
+            [zcr_mean, zcr_std]           # 2 features
+        ])
         
         return features.tolist()
     
@@ -88,7 +106,8 @@ def enroll_voice(audio_path):
     Returns:
         JSON with features
     """
-    features = extract_mfcc_features(audio_path, duration=10)
+    # Durasi 5 detik - optimal untuk keamanan & kecepatan
+    features = extract_mfcc_features(audio_path, duration=5)
     
     return {
         'success': True,
@@ -108,20 +127,20 @@ def verify_voice(test_audio_path, enrolled_features):
     Returns:
         JSON with similarity score
     """
-    # Extract features from test audio
-    test_features = extract_mfcc_features(test_audio_path, duration=10)
+    # Extract features from test audio - 5 detik (sama dengan enrollment)
+    test_features = extract_mfcc_features(test_audio_path, duration=5)
     
     # Compare features
     similarity = compare_voices(enrolled_features, test_features)
     
-    # Threshold for authentication (80%)
-    is_match = bool(similarity >= 95.0)
+    # Threshold dinaikkan ke 97% untuk keamanan lebih ketat
+    is_match = bool(similarity >= 97.0)
     
     return {
         'success': True,
         'similarity': round(similarity, 2),
         'is_match': is_match,
-        'threshold': 95.0
+        'threshold': 97.0
     }
 
 def main():

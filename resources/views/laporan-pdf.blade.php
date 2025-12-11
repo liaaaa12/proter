@@ -164,8 +164,8 @@
                 <tr>
                     <th style="width: 15%;">Tanggal</th>
                     <th style="width: 15%;">Kategori</th>
-                    <th style="width: 20%; text-align: right;">Nominal</th>
-                    <th style="width: 20%; text-align: right;">Saldo</th>
+                    <th style="width: 20%;">Nominal</th>
+                    <th style="width: 20%;">Saldo</th>
                     <th style="width: 30%;">Catatan</th>
                 </tr>
             </thead>
@@ -174,10 +174,10 @@
                     <tr>
                         <td>{{ $transaction['tanggal'] }}</td>
                         <td>{{ $transaction['kategori'] }}</td>
-                        <td class="text-right {{ $transaction['jenis'] === 'Pemasukan' ? 'nominal-pemasukan' : 'nominal-pengeluaran' }}">
+                        <td class="{{ $transaction['jenis'] === 'Pemasukan' ? 'nominal-pemasukan' : 'nominal-pengeluaran' }}">
                             {{ $transaction['jenis'] === 'Pemasukan' ? '+' : '-' }} {{ $transaction['jumlah_formatted'] }}
                         </td>
-                        <td class="text-right">{{ $transaction['saldo_formatted'] }}</td>
+                        <td>{{ $transaction['saldo_formatted'] }}</td>
                         <td>{{ $transaction['keterangan'] }}</td>
                     </tr>
                 @endforeach

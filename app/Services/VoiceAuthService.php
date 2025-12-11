@@ -42,45 +42,28 @@ class VoiceAuthService
     }
 
     /**
-     * Convert audio format using FFmpeg (if available)
-     * Falls back to original format if FFmpeg not available
+     * Verify audio format is WAV (browser-side conversion)
+     * No server-side conversion needed - browser already converts to WAV 16kHz mono
+     * This function now only validates the file format
      */
     public function convertToWav(string $inputPath): string
-{
-    $ffmpegPath = base_path('ffmpeg/bin/ffmpeg.exe');
-
-    if (!file_exists($ffmpegPath)) {
-        \Log::error('FFmpeg not found at: ' . $ffmpegPath);
-        return $inputPath;
-    }
-
-    $outputPath = pathinfo($inputPath, PATHINFO_DIRNAME) . '/' .
-                  pathinfo($inputPath, PATHINFO_FILENAME) . '.wav';
-
-    // Pakai exec agar FFmpeg benar-benar selesai
-    $command = "\"$ffmpegPath\" -i \"$inputPath\" -ar 16000 -ac 1 \"$outputPath\" 2>&1";
-
-    exec($command, $output, $status);
-
-    \Log::info("FFmpeg status: $status");
-    \Log::info("FFmpeg output: " . implode("\n", $output));
-
-    if ($status === 0 && file_exists($outputPath) && filesize($outputPath) > 0) {
-
-        \Log::info("UNLINK TRY: $inputPath");
-
-        if (!unlink($inputPath)) {
-            \Log::error("UNLINK FAILED: $inputPath");
-        } else {
-            \Log::info("UNLINK SUCCESS: $inputPath");
+    {
+        // Check if file is already WAV format
+        $extension = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION));
+        
+        if ($extension === 'wav') {
+            \Log::info('✅ File is already WAV format (browser-side conversion): ' . $inputPath);
+            return $inputPath;
         }
 
-        return $outputPath;
+        // If file is not WAV, log warning but still return it
+        // This should not happen if browser-side conversion is working correctly
+        \Log::warning('⚠️ File is not WAV format: ' . $extension . ' - Browser conversion may have failed');
+        \Log::warning('File path: ' . $inputPath);
+        
+        // Return original file - Python script will attempt to process it
+        return $inputPath;
     }
-
-    \Log::error("Konversi gagal, WAV tidak dibuat");
-    return $inputPath;
-}
 
 
     /**

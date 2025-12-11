@@ -383,44 +383,23 @@ class VoiceTransactionController extends Controller
             }
 
             $lowerText = strtolower($text);
+            $userId = auth()->id();
+            
             $data = [
                 'jenis' => 'Pengeluaran', // Default
                 'kategori' => 'Lainnya',
                 'jumlah' => 0,
                 'keterangan' => ucfirst($text),
-                'budget_allocation' => null, // Default to null
-                'goal_allocation' => null    // Default to null
+                'budget_id' => null,
+                'goal_id' => null,
+                'budget_name' => null,
+                'goal_name' => null
             ];
 
-            // 1. Deteksi Jumlah (Angka)
-            // Mencari pola angka, bisa diikuti "ribu", "rb", "k", "juta", "jt"
-            // Contoh: "50000", "50.000", "50 ribu", "50k", "1.5 juta"
-            if (preg_match('/(\d+(?:[\.,]\d+)*)\s*(ribu|juta|rb|jt|k|m)?/i', $lowerText, $matches)) {
-                // Bersihkan angka dari titik/koma ribuan (ambil digit dan titik desimal jika ada)
-                // Asumsi format Indonesia: titik = ribuan, koma = desimal.
-                // Tapi speech-to-text kadang tidak konsisten.
-                // Pendekatan aman: ambil semua digit.
-                
-                $modifier = strtolower($matches[2] ?? '');
-                $baseNumber = 0;
-
-                if ($modifier) {
-                    // Jika ada modifier, parsing angka dengan hati-hati (misal "1.5" atau "1,5")
-                    $cleanNumStr = str_replace(',', '.', $matches[1]); // Ubah koma jadi titik desimal standar
-                    $baseNumber = floatval($cleanNumStr);
-                } else {
-                    // Jika tidak ada modifier, anggap integer murni (hapus non-digit)
-                    $baseNumber = floatval(preg_replace('/[^0-9]/', '', $matches[1]));
-                }
-
-                // Kalikan sesuai modifier
-                if (in_array($modifier, ['ribu', 'rb', 'k'])) {
-                    $baseNumber *= 1000;
-                } elseif (in_array($modifier, ['juta', 'jt', 'm'])) {
-                    $baseNumber *= 1000000;
-                }
-                
-                $data['jumlah'] = $baseNumber;
+            // 1. Deteksi Jumlah (Angka + Terbilang)
+            $jumlahDetected = $this->detectJumlah($lowerText);
+            if ($jumlahDetected > 0) {
+                $data['jumlah'] = $jumlahDetected;
             }
 
             // 2. Deteksi Jenis
@@ -432,31 +411,109 @@ class VoiceTransactionController extends Controller
                 }
             }
 
-            // 3. Deteksi Kategori
+            // 3. Deteksi Kategori Dasar (Fallback) - DENGAN KATA GAUL
             $kategoriMap = [
-                'Makanan' => ['makan', 'minum', 'nasi', 'kopi', 'snack', 'jajan', 'warteg', 'restoran', 'cafe', 'roti', 'mie', 'bakso'],
-                'Transport' => ['bensin', 'parkir', 'grab', 'gojek', 'tol', 'angkot', 'kereta', 'bus', 'ojek', 'taksi', 'uber'],
-                'Belanja' => ['beli', 'belanja', 'supermarket', 'indomaret', 'alfamart', 'pasar', 'mall', 'shopee', 'tokopedia', 'baju', 'celana'],
-                'Hiburan' => ['nonton', 'bioskop', 'game', 'main', 'liburan', 'wisata', 'jalan-jalan', 'spotify', 'netflix'],
-                'Tagihan' => ['listrik', 'air', 'internet', 'wifi', 'pulsa', 'paket data', 'pln', 'pdam', 'bpjs', 'asuransi'],
-                'Kesehatan' => ['obat', 'dokter', 'rumah sakit', 'klinik', 'vitamin', 'masker'],
-                'Pendidikan' => ['buku', 'sekolah', 'kursus', 'kuliah', 'spp', 'les'],
-                'Sedekah' => ['sedekah', 'infaq', 'zakat', 'donasi', 'sumbangan']
+                'Makanan' => [
+                    'makan', 'minum', 'nasi', 'kopi', 'snack', 'jajan', 'warteg', 'restoran', 'cafe', 'roti', 'mie', 'bakso', 'soto', 'ayam', 'sate',
+                    // Kata gaul:
+                    'nasdang', 'naspad', 'nasi padang', 'mcd', 'kfc', 'mekdi', 'ricebowl', 'geprek', 'ngopi', 'nongkrong'
+                ],
+                'Transportasi' => [
+                    'bensin', 'parkir', 'grab', 'gojek', 'tol', 'angkot', 'kereta', 'bus', 'ojek', 'taksi', 'uber', 'bengkel', 'transport', 'ojol',
+                    // Kata gaul:
+                    'goceng parkir', 'gocar', 'grabcar', 'grabbike', 'gojek', 'ojol'
+                ],
+                'Belanja' => [
+                    'beli', 'belanja', 'supermarket', 'indomaret', 'alfamart', 'pasar', 'mall', 'shopee', 'tokopedia', 'baju', 'celana', 'skincare', 'kosmetik',
+                    // Kata gaul:
+                    'tokped', 'shopee', 'lazada', 'olshop', 'online shop', 'beli baju', 'shopping'
+                ],
+                'Hiburan' => [
+                    'nonton', 'bioskop', 'game', 'main', 'spotify', 'netflix', 'youtube premium', 'konser',
+                    // Kata gaul:
+                    'netflik', 'ngefilm', 'ngegame', 'mlbb', 'mobile legend', 'pubg', 'steam'
+                ],
+                'Jalan-Jalan' => [
+                    'liburan', 'wisata', 'jalan-jalan', 'traveling', 'trip', 'vacation', 'hotel', 'penginapan',
+                    // Kata gaul:
+                    'jalan', 'jalan jalan', 'piknik', 'refreshing', 'staycation'
+                ],
+                'Tagihan' => [
+                    'listrik', 'air', 'internet', 'wifi', 'pulsa', 'paket data', 'pln', 'pdam', 'bpjs', 'asuransi', 'cicilan', 'kredit', 'pinjaman',
+                    // Kata gaul:
+                    'bayar listrik', 'token listrik', 'beli pulsa', 'isi pulsa', 'kuota'
+                ],
+                'Kesehatan' => [
+                    'obat', 'dokter', 'rumah sakit', 'klinik', 'vitamin', 'masker', 'medical', 'checkup', 'lab',
+                    // Kata gaul:
+                    'ke dokter', 'berobat', 'beli obat', 'apotek'
+                ],
+                'Pendidikan' => [
+                    'buku', 'sekolah', 'kursus', 'kuliah', 'spp', 'les', 'seminar', 'workshop', 'training',
+                    // Kata gaul:
+                    'bayar spp', 'beli buku', 'kursus online', 'udemy', 'coursera'
+                ],
+                'Sedekah' => [
+                    'sedekah', 'infaq', 'zakat', 'donasi', 'sumbangan', 'amal', 'charity',
+                    // Kata gaul:
+                    'nyumbang', 'derma', 'bantuan'
+                ],
+                'Tabungan' => ['nabung', 'tabung', 'saving', 'simpan', 'investasi'],
+                'Gaji' => ['gaji', 'salary', 'upah', 'honor'],
+                'Bonus' => ['bonus', 'thr', 'insentif', 'komisi'],
+                'Penjualan' => ['jual', 'penjualan', 'sales', 'omzet']
             ];
 
             foreach ($kategoriMap as $kategori => $keywords) {
                 foreach ($keywords as $keyword) {
-                    // Cek exact word match agar "makan" tidak match "makanan" (eh, gapapa sih)
-                    // Tapi "beli" (Belanja) jangan sampai match "beli makan" (Makanan).
-                    // Prioritas kategori di atas sudah cukup baik.
                     if (strpos($lowerText, $keyword) !== false) {
                         $data['kategori'] = $kategori;
-                        break 2; // Break both loops
+                        break 2;
                     }
                 }
             }
             
-            // Jika jenis Pemasukan tapi kategori masih Lainnya/Default, coba tebak
+            // 4. SMART DETECTION: Cek Budget User
+            $budgets = DB::table('budget')
+                ->where('user_id', $userId)
+                ->get(['id', 'namaBudget', 'kategori']);
+
+            foreach ($budgets as $budget) {
+                if (strpos($lowerText, strtolower($budget->namaBudget)) !== false) {
+                    $data['budget_id'] = $budget->id;
+                    $data['budget_name'] = $budget->namaBudget;
+                    $data['jenis'] = 'Pengeluaran';
+                    
+                    if ($data['kategori'] == 'Lainnya' && $budget->kategori) {
+                        $data['kategori'] = $budget->kategori;
+                    }
+                    
+                    Log::info("Smart Match: Budget '{$budget->namaBudget}' detected.");
+                    break;
+                }
+            }
+
+            // 5. SMART DETECTION: Cek Goals User
+            $goals = DB::table('goals')
+                ->where('user_id', $userId)
+                ->get(['id', 'namaGoal']);
+
+            foreach ($goals as $goal) {
+                if (strpos($lowerText, strtolower($goal->namaGoal)) !== false) {
+                    $data['goal_id'] = $goal->id;
+                    $data['goal_name'] = $goal->namaGoal;
+                    $data['jenis'] = 'Pengeluaran';
+                    $data['kategori'] = 'Tabungan';
+                    
+                    Log::info("Smart Match: Goal '{$goal->namaGoal}' detected.");
+                    break;
+                }
+            }
+
+            // 6. Clean up description - HAPUS kata mata uang dan angka
+            $data['keterangan'] = $this->cleanDescription($text, $lowerText);
+            
+            // 7. Jika jenis Pemasukan tapi kategori masih Lainnya, coba tebak
             if ($data['jenis'] == 'Pemasukan' && $data['kategori'] == 'Lainnya') {
                 if (strpos($lowerText, 'gaji') !== false) $data['kategori'] = 'Gaji';
                 elseif (strpos($lowerText, 'bonus') !== false) $data['kategori'] = 'Bonus';
@@ -478,5 +535,150 @@ class VoiceTransactionController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Deteksi jumlah dari teks (support angka digit dan terbilang)
+     */
+    private function detectJumlah($text)
+    {
+        $jumlah = 0;
+        
+        // 1. Coba deteksi angka dengan format digit (10.000, 50rb, 2.5jt, dll)
+        if (preg_match('/(\d+(?:[\\.,]\d+)*)\s*(ribu|juta|rb|jt|k|m|rp|rupiah)?/i', $text, $matches)) {
+            $modifier = strtolower($matches[2] ?? '');
+            $baseNumber = 0;
+
+            if (in_array($modifier, ['ribu', 'rb', 'k'])) {
+                $cleanNumStr = str_replace(',', '.', $matches[1]);
+                $baseNumber = floatval($cleanNumStr) * 1000;
+            } elseif (in_array($modifier, ['juta', 'jt', 'm'])) {
+                $cleanNumStr = str_replace(',', '.', $matches[1]);
+                $baseNumber = floatval($cleanNumStr) * 1000000;
+            } else {
+                // Angka tanpa modifier atau dengan "rp"/"rupiah"
+                // Hapus semua titik dan koma, lalu convert
+                $cleanNumStr = preg_replace('/[.,]/', '', $matches[1]);
+                $baseNumber = floatval($cleanNumStr);
+            }
+            
+            $jumlah = $baseNumber;
+        }
+        
+        // 2. Jika tidak ada angka digit, coba deteksi terbilang
+        if ($jumlah == 0) {
+            $jumlah = $this->terbilangKeAngka($text);
+        }
+        
+        return $jumlah;
+    }
+
+    /**
+     * Convert terbilang ke angka (dari file lama yang sudah proven works!)
+     * Contoh: "lima puluh ribu" → 50000
+     */
+    private function terbilangKeAngka($text)
+    {
+        $angkaMap = [
+            'nol' => 0, 'satu' => 1, 'dua' => 2, 'tiga' => 3, 'empat' => 4, 'lima' => 5,
+            'enam' => 6, 'tujuh' => 7, 'delapan' => 8, 'sembilan' => 9, 'sepuluh' => 10,
+            'sebelas' => 11, 'belas' => 10, 'puluh' => 10, 'ratus' => 100, 'ribu' => 1000,
+            'juta' => 1000000, 'miliar' => 1000000000, 'triliun' => 1000000000000
+        ];
+
+        $total = 0;
+        $currentVal = 0;
+        
+        // Perbaiki kata khusus
+        $text = str_replace('seribu', 'satu ribu', $text);
+        $text = str_replace('seratus', 'satu ratus', $text);
+        
+        $words = explode(' ', strtolower($text));
+        
+        foreach ($words as $word) {
+            // Skip jika bukan kata angka
+            if (!isset($angkaMap[$word])) {
+                continue;
+            }
+            
+            $nilai = $angkaMap[$word];
+            
+            if ($nilai >= 1000) { // Multiplier: ribu, juta, dst.
+                $total += ($currentVal !== 0 ? $currentVal : 1) * $nilai;
+                $currentVal = 0;
+            } elseif ($nilai === 100) { // Ratus
+                $currentVal = ($currentVal !== 0 ? $currentVal : 1) * $nilai;
+            } elseif ($nilai === 10) { // Puluh atau Belas
+                if ($currentVal > 0 && $currentVal < 10) {
+                    $currentVal += $nilai; // "lima belas" = 5 + 10 = 15
+                } else {
+                    $currentVal = ($currentVal !== 0 ? $currentVal : 1) * $nilai;
+                }
+            } else { // Satuan
+                $currentVal += $nilai;
+            }
+        }
+        
+        return $total + $currentVal;
+    }
+
+    /**
+     * Bersihkan deskripsi dari kata-kata yang tidak perlu
+     * Hapus: angka, "rp", "rupiah", kata jenis transaksi, dll
+     */
+    private function cleanDescription($originalText, $lowerText)
+    {
+        // Kata-kata yang harus dihapus dari deskripsi
+        $wordsToRemove = [
+            // Mata uang
+            'rp', 'rupiah', 'idr',
+            // Jenis transaksi
+            'pengeluaran', 'keluar', 'biaya', 'bayar', 'beli', 'pemasukan', 'masuk', 'pendapatan', 'dapat', 'terima',
+            // Kata perintah
+            'catat', 'tolong', 'untuk', 'sebesar',
+            // Modifier angka
+            'ribu', 'juta', 'miliar', 'rb', 'jt', 'k', 'm'
+        ];
+        
+        // Split text menjadi array kata
+        $words = explode(' ', $lowerText);
+        $originalWords = explode(' ', $originalText);
+        $cleanWords = [];
+        
+        for ($i = 0; $i < count($words); $i++) {
+            $word = $words[$i];
+            
+            // Skip jika kata adalah angka (digit)
+            if (preg_match('/\d/', $word)) {
+                continue;
+            }
+            
+            // Skip jika kata adalah terbilang angka
+            $angkaWords = ['nol', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 
+                          'sepuluh', 'sebelas', 'belas', 'puluh', 'ratus', 'ribu', 'juta', 'miliar', 'triliun',
+                          'seribu', 'seratus'];
+            if (in_array($word, $angkaWords)) {
+                continue;
+            }
+            
+            // Skip jika kata ada di daftar kata yang harus dihapus
+            if (in_array($word, $wordsToRemove)) {
+                continue;
+            }
+            
+            // Jika lolos semua filter, masukkan ke clean words (pakai original case)
+            $cleanWords[] = $originalWords[$i];
+        }
+        
+        $cleanDescription = trim(implode(' ', $cleanWords));
+        
+        // Jika deskripsi kosong, gunakan teks asli tapi capitalize
+        if (empty($cleanDescription)) {
+            $cleanDescription = ucfirst($originalText);
+        } else {
+            $cleanDescription = ucfirst($cleanDescription);
+        }
+        
+        return $cleanDescription;
     }
 }

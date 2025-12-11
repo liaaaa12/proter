@@ -7,12 +7,12 @@
 @endphp
 
 <!-- Goals Header -->
-<div class="header goals-header">
+<div class="header">
     <div class="header-text">
         <h1>Target Keuangan</h1>
         <p>🎯 Wujudkan impianmu satu per satu!</p>
     </div>
-    <button class="voice-btn" onclick="startVoiceRecording()">
+    <button class="voice-btn voice-btn-header" onclick="startVoiceRecording()">
         <svg width="24" height="30" viewBox="0 0 38 48" fill="none">
             <path d="M38 20.8929C38 20.6571 37.7927 20.4643 37.5394 20.4643H34.0849C33.8315 20.4643 33.6242 20.6571 33.6242 20.8929C33.6242 28.4089 27.0779 34.5 19 34.5C10.9221 34.5 4.37576 28.4089 4.37576 20.8929C4.37576 20.6571 4.16849 20.4643 3.91515 20.4643H0.460606C0.207273 20.4643 0 20.6571 0 20.8929C0 29.9304 7.28909 37.3875 16.697 38.4429V43.9286H8.33121C7.54243 43.9286 6.90909 44.6946 6.90909 45.6429V47.5714C6.90909 47.8071 7.0703 48 7.26606 48H30.7339C30.9297 48 31.0909 47.8071 31.0909 47.5714V45.6429C31.0909 44.6946 30.4576 43.9286 29.6688 43.9286H21.0727V38.4696C30.59 37.5054 38 30.0054 38 20.8929ZM19 30C24.4064 30 28.7879 25.9714 28.7879 21V9C28.7879 4.02857 24.4064 0 19 0C13.5936 0 9.21212 4.02857 9.21212 9V21C9.21212 25.9714 13.5936 30 19 30Z" fill="white"/>
         </svg>
@@ -73,7 +73,7 @@
             <div class="empty-state-icon">🎯</div>
             <h3>Belum Ada Goals</h3>
             <p>Mulai atur target keuangan Anda untuk masa depan yang lebih baik!</p>
-            <button class="btn-add-goal" style="margin-top: 10px;" onclick="document.getElementById('btn-add-goal').click()">+ Tambah Target Pertama</button>
+            <button class="btn-add-goal" style="margin-top: 10px;" onclick="openGoalModal()">+ Tambah Target Pertama</button>
         </div>
     @endforelse
 </div>
@@ -102,8 +102,9 @@
                     💰 Berapa Target Uang? <span style="color: #ED6363;">*</span>
                 </label>
                 <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Total uang yang ingin dikumpulkan</p>
-                <input type="number" id="targetNominal" name="targetNominal" placeholder="Contoh: 10000000" required style="font-size: 16px; padding: 14px;">
-                <p style="font-size: 12px; color: #999; margin-top: 5px;">💡 Tulis angka saja tanpa titik atau koma</p>
+                <input type="text" id="targetNominal" name="targetNominal" placeholder="Contoh: 10.000.000" required style="font-size: 16px; padding: 14px;">
+                <input type="hidden" id="targetNominal_raw" name="targetNominal_raw">
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">💡 Angka akan otomatis diformat dengan pemisah ribuan</p>
             </div>
 
             <div class="form-group">
@@ -111,7 +112,8 @@
                     💵 Sudah Terkumpul Berapa? (Opsional)
                 </label>
                 <p style="font-size: 13px; color: #666; margin: 5px 0 8px 0;">Jika sudah ada tabungan, isi di sini. Jika belum, kosongkan saja</p>
-                <input type="number" id="nominalBerjalan" name="nominalBerjalan" placeholder="Contoh: 5000000 (atau kosongkan)" style="font-size: 16px; padding: 14px;">
+                <input type="text" id="nominalBerjalan" name="nominalBerjalan" placeholder="Contoh: 5.000.000 (atau kosongkan)" style="font-size: 16px; padding: 14px;">
+                <input type="hidden" id="nominalBerjalan_raw" name="nominalBerjalan_raw">
             </div>
 
             <div class="form-group">
@@ -147,32 +149,6 @@
 <!-- Voice Modal, Loading, Toast removed (moved to layout) -->
 
 <style>
-    .goals-header {
-        background: white;
-        padding: 20px 30px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-        border: 1px solid #00456A;
-        border-radius: 10px;
-        margin-bottom: 25px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-    .header-text h1 {
-        color: #2C3E50;
-        font-size: clamp(24px, 4vw, 40px);
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .header-text p {
-        color: #2C3E50;
-        font-size: clamp(14px, 2vw, 20px);
-    }
-
     .goals-actions {
         display: flex;
         justify-content: flex-end;
@@ -349,6 +325,7 @@
     .goal-form {
         background: white;
         padding: 30px;
+        padding-bottom: 80px;
         border-radius: 15px;
         box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.3);
         max-width: 500px;
@@ -514,7 +491,8 @@
             max-width: 100%;
             width: 95%;
             padding: 20px;
-            max-height: 90vh;
+            padding-bottom: 80px; /* Extra space for bottom navbar */
+            max-height: 85vh; /* Reduced to ensure scrollability */
             overflow-y: auto;
         }
         
@@ -538,6 +516,7 @@
         .goal-form .form-actions {
             flex-direction: column;
             gap: 10px;
+            margin-bottom: 15px; /* Extra margin at bottom */
         }
         
         .goal-form .btn-save,
@@ -742,7 +721,7 @@
     function openGoalModal() {
         formMode.value = 'add';
         formGoalId.value = '';
-        formTitle.textContent = 'Tambah Goal Baru';
+        formTitle.textContent = 'Tambah Target Baru';
         formSubmitBtn.textContent = 'Simpan';
         goalForm.reset();
         goalFormContainer.style.display = 'flex';
@@ -928,4 +907,202 @@
     function closeHistoryModal() {
         document.getElementById('historyModal').classList.remove('active');
     }
+
+    // ========== RUPIAH FORMATTING FUNCTIONS ==========
+    
+    function formatRupiah(angka) {
+        if (!angka) return '';
+        const number = typeof angka === 'string' ? parseFloat(angka.replace(/\./g, '')) : angka;
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function unformatRupiah(formatted) {
+        if (!formatted) return 0;
+        const cleaned = formatted.toString().replace(/\./g, '');
+        return parseFloat(cleaned) || 0;
+    }
+
+    // Update editGoal untuk format angka
+    const originalEditGoal = editGoal;
+    editGoal = function(id, namaGoal, targetNominal, nominalBerjalan, tanggalTarget) {
+        formMode.value = 'edit';
+        formGoalId.value = id;
+        formTitle.textContent = 'Edit Goal';
+        formSubmitBtn.textContent = 'Update';
+        
+        document.getElementById('namaGoal').value = namaGoal;
+        document.getElementById('targetNominal').value = formatRupiah(targetNominal);
+        document.getElementById('nominalBerjalan').value = formatRupiah(nominalBerjalan);
+        document.getElementById('tanggalTarget').value = tanggalTarget;
+        
+        goalFormContainer.style.display = 'flex';
+    };
+
+    // Update form submission untuk parse formatted numbers
+    const originalFormSubmit = goalForm.onsubmit;
+    goalForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('.btn-save');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = formMode.value === 'add' ? 'Menyimpan...' : 'Mengupdate...';
+
+        const isEditMode = formMode.value === 'edit';
+        const url = isEditMode ? `/goals/${formGoalId.value}` : '{{ route('goals.store') }}';
+
+        // Parse formatted numbers
+        const targetNominalFormatted = document.getElementById('targetNominal').value;
+        const nominalBerjalanFormatted = document.getElementById('nominalBerjalan').value;
+        
+        const targetNominalRaw = unformatRupiah(targetNominalFormatted);
+        const nominalBerjalanRaw = nominalBerjalanFormatted ? unformatRupiah(nominalBerjalanFormatted) : 0;
+
+        // Validasi: target nominal tidak boleh 0 atau negatif
+        if (!targetNominalRaw || targetNominalRaw <= 0) {
+            Swal.fire({
+                title: 'Peringatan!',
+                text: 'Target nominal harus lebih dari 0!',
+                icon: 'warning',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
+            });
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+
+        // Validasi: nominal berjalan tidak boleh negatif
+        if (nominalBerjalanRaw < 0) {
+            Swal.fire({
+                title: 'Peringatan!',
+                text: 'Nominal terkumpul tidak boleh negatif!',
+                icon: 'warning',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
+            });
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+
+        const data = new FormData();
+        if (isEditMode) {
+            data.append('_method', 'PUT');
+        }
+        data.append('_token', document.querySelector('#goal-form [name="_token"]').value);
+        data.append('namaGoal', document.getElementById('namaGoal').value);
+        data.append('targetNominal', targetNominalRaw);
+        data.append('nominalBerjalan', nominalBerjalanRaw);
+        data.append('tanggalTarget', document.getElementById('tanggalTarget').value);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: data
+        })
+        .then(resp => resp.json())
+        .then(result => {
+            if (result.success) {
+                const goal = result.goal;
+                
+                if (isEditMode) {
+                    updateGoalCard(goal);
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: 'Target berhasil diupdate.',
+                        icon: 'success',
+                        confirmButtonColor: '#00456A',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    addGoalCard(goal);
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: 'Target baru berhasil ditambahkan.',
+                        icon: 'success',
+                        confirmButtonColor: '#00456A',
+                        confirmButtonText: 'OK'
+                    });
+                }
+                
+                goalFormContainer.style.display = 'none';
+                goalForm.reset();
+                formMode.value = 'add';
+                formGoalId.value = '';
+            } else {
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: result.message || 'Terjadi kesalahan',
+                    icon: 'error',
+                    confirmButtonColor: '#00456A',
+                    confirmButtonText: 'OK'
+                });
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Terjadi kesalahan saat menyimpan target',
+                icon: 'error',
+                confirmButtonColor: '#00456A',
+                confirmButtonText: 'OK'
+            });
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    }, true); // Use capture to override existing handler
+
+    // Event listener untuk auto-format
+    document.addEventListener('DOMContentLoaded', function() {
+        const targetNominalInput = document.getElementById('targetNominal');
+        const nominalBerjalanInput = document.getElementById('nominalBerjalan');
+        
+        // Function to setup formatting on an input
+        function setupFormatting(input, rawInputId) {
+            if (!input) return;
+            
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\./g, '');
+                value = value.replace(/[^\d]/g, '');
+                
+                if (value) {
+                    e.target.value = formatRupiah(value);
+                    if (rawInputId) {
+                        const rawInput = document.getElementById(rawInputId);
+                        if (rawInput) rawInput.value = value;
+                    }
+                } else {
+                    e.target.value = '';
+                    if (rawInputId) {
+                        const rawInput = document.getElementById(rawInputId);
+                        if (rawInput) rawInput.value = '';
+                    }
+                }
+            });
+            
+            input.addEventListener('keypress', function(e) {
+                if ([8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                    (e.keyCode === 65 && e.ctrlKey === true) ||
+                    (e.keyCode === 67 && e.ctrlKey === true) ||
+                    (e.keyCode === 86 && e.ctrlKey === true) ||
+                    (e.keyCode === 88 && e.ctrlKey === true)) {
+                    return;
+                }
+                
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                    e.preventDefault();
+                }
+            });
+        }
+        
+        setupFormatting(targetNominalInput, 'targetNominal_raw');
+        setupFormatting(nominalBerjalanInput, 'nominalBerjalan_raw');
+    });
 </script>

@@ -30,6 +30,7 @@ class AccountSettingsController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'phone' => 'required|string|max:20',
+                'current_password' => 'nullable|string',
                 'password' => 'nullable|min:8|confirmed',
             ]);
 
@@ -46,6 +47,23 @@ class AccountSettingsController extends Controller
 
             // Update password jika diisi
             if (!empty($validated['password'])) {
+                // VALIDASI PASSWORD LAMA
+                if (empty($request->current_password)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Password lama harus diisi untuk mengubah password'
+                    ], 422);
+                }
+
+                // Cek apakah password lama benar
+                if (!Hash::check($request->current_password, $user->password)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Password lama yang Anda masukkan salah'
+                    ], 422);
+                }
+
+                // Jika password lama benar, update password baru
                 DB::table('users')
                     ->where('id', $user->id)
                     ->update([
