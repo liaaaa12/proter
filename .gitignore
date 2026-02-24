@@ -22,3 +22,17 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# GSD Internal & Planning
+.planning/
+" .planning/"
+.gemini/
+
+# Local Python & Data
+.venv/
+datasets/
+__pycache__/
+*.pyc
+
+# Keep pretrained_models (as requested)
+!pretrained_models/

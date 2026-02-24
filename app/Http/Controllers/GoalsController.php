@@ -13,17 +13,17 @@ class GoalsController extends Controller
         $goals = Goal::where('user_id', Auth::id())->orderBy('created_at', 'desc')->get();
 
         // Calculate nominalBerjalan from transactions with goal_id
-        $goals = $goals->map(function($goal) {
+        $goals = $goals->map(function ($goal) {
             // Sum all transactions that are allocated to this goal
             // Both Pemasukan and Pengeluaran can contribute to goals
             $nominalBerjalan = \Illuminate\Support\Facades\DB::table('transaction')
                 ->where('user_id', Auth::id())
                 ->where('goal_id', $goal->id)
                 ->sum('jumlah');
-            
+
             // Update the goal object with calculated value
             $goal->nominalBerjalan = $nominalBerjalan;
-            
+
             return $goal;
         });
 
@@ -33,13 +33,10 @@ class GoalsController extends Controller
             ->select('id', 'namaBudget', 'kategori')
             ->get();
 
-        // If request is AJAX, return only the inner content to swap into the page
-        if ($request->ajax() || $request->wantsJson()) {
-            return view('goals._content', compact('goals', 'allBudgets'));
-        }
-
-        // Full page (when navigated directly)
-        return view('goals.index', compact('goals', 'allBudgets'));
+        return inertia('Goals', [
+            'goals' => $goals,
+            'allBudgets' => $allBudgets
+        ]);
     }
 
     public function store(Request $request)
@@ -54,15 +51,7 @@ class GoalsController extends Controller
         $data['nominalBerjalan'] = $data['nominalBerjalan'] ?? 0;
         $data['user_id'] = Auth::id();
 
-        // Check if nominalBerjalan >= targetNominal (goal already achieved)
         if ($data['nominalBerjalan'] >= $data['targetNominal']) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Goal sudah tercapai, tidak perlu disimpan lagi.',
-                    'status' => 'warning'
-                ], 400);
-            }
             return redirect()->route('goals')->with('error', 'Goal sudah tercapai, tidak perlu disimpan lagi.');
         }
 
@@ -73,27 +62,12 @@ class GoalsController extends Controller
             ->first();
 
         if ($existingGoal) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Goal dengan nama dan tanggal yang sama sudah ada. Silakan ubah atau gunakan nama berbeda.',
-                    'status' => 'warning'
-                ], 400);
-            }
             return redirect()->route('goals')->with('error', 'Goal dengan nama dan tanggal yang sama sudah ada.');
         }
 
-        $goal = Goal::create($data);
+        Goal::create($data);
 
-        if ($request->ajax() || $request->wantsJson()) {
-            // Return JSON with goal data for DOM update
-            return response()->json([
-                'success' => true,
-                'goal' => $goal
-            ]);
-        }
-
-        return redirect()->route('goals')->with('status', 'Goal berhasil dibuat');
+        return redirect()->route('goals')->with('success', 'Goal berhasil dibuat');
     }
 
     public function update(Request $request, $id)
@@ -111,15 +85,7 @@ class GoalsController extends Controller
 
         $goal->update($data);
 
-        if ($request->ajax() || $request->wantsJson()) {
-            // Return JSON with updated goal data
-            return response()->json([
-                'success' => true,
-                'goal' => $goal
-            ]);
-        }
-
-        return redirect()->route('goals')->with('status', 'Goal berhasil diperbarui');
+        return redirect()->route('goals')->with('success', 'Goal berhasil diperbarui');
     }
 
     public function destroy(Request $request, $id)
@@ -127,15 +93,7 @@ class GoalsController extends Controller
         $goal = Goal::where('user_id', Auth::id())->findOrFail($id);
         $goal->delete();
 
-        if ($request->ajax() || $request->wantsJson()) {
-            // Return JSON response for delete
-            return response()->json([
-                'success' => true,
-                'message' => 'Goals berhasil dihapus'
-            ]);
-        }
-
-        return redirect()->route('goals')->with('status', 'Goal berhasil dihapus');
+        return redirect()->route('goals')->with('success', 'Goal berhasil dihapus');
     }
 
     public function getTransactions($id)

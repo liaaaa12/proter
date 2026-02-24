@@ -9,13 +9,13 @@
     <div class="filter-header">
         <div class="filter-title">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right: 8px;">
-                <path d="M19 4H5C3.89 4 3 4.9 3 6V8C3 8.55 3.45 9 4 9H20C20.55 9 21 8.55 21 8V6C21 4.9 20.11 4 19 4ZM19 20H5C3.89 20 3 19.1 3 18V16C3 15.45 3.45 15 4 15H20C20.55 15 21 15.45 21 16V18C21 19.1 20.11 20 19 20Z" fill="#2C3E50"/>
+                <path d="M19 4H5C3.89 4 3 4.9 3 6V8C3 8.55 3.45 9 4 9H20C20.55 9 21 8.55 21 8V6C21 4.9 20.11 4 19 4ZM19 20H5C3.89 20 3 19.1 3 18V16C3 15.45 3.45 15 4 15H20C20.55 15 21 15.45 21 16V18C21 19.1 20.11 20 19 20Z" fill="#2C3E50" />
             </svg>
             Pilih Periode
         </div>
         <button class="btn-download" id="btnDownloadPdf">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 6px;">
-                <path d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z" fill="white"/>
+                <path d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z" fill="white" />
             </svg>
             Unduh Laporan
         </button>
@@ -23,7 +23,7 @@
 
     <div class="filter-controls">
         <div class="filter-label">Dari</div>
-        
+
         <select class="filter-select" id="bulanDari">
             <option value="">Bulan</option>
             <option value="1">Januari</option>
@@ -43,7 +43,7 @@
         <select class="filter-select" id="tahunDari">
             <option value="">Tahun</option>
             @foreach($years as $year)
-                <option value="{{ $year }}">{{ $year }}</option>
+            <option value="{{ $year }}">{{ $year }}</option>
             @endforeach
         </select>
 
@@ -70,7 +70,7 @@
         <select class="filter-select" id="tahunSampai">
             <option value="">Tahun</option>
             @foreach($years as $year)
-                <option value="{{ $year }}">{{ $year }}</option>
+            <option value="{{ $year }}">{{ $year }}</option>
             @endforeach
         </select>
 
@@ -99,7 +99,7 @@
     <div id="periodInfo" style="margin-bottom: 15px; font-size: 16px; font-weight: 600; color: #00456A; display: none;">
         Periode: <span id="periodText"></span>
     </div>
-    
+
     <div class="table-wrapper">
         <table>
             <thead>
@@ -130,10 +130,10 @@
             <h2>Edit Transaksi</h2>
             <button class="close-btn" onclick="closeEditModal()">&times;</button>
         </div>
-        
+
         <form id="editForm" onsubmit="saveEdit(event)">
             <input type="hidden" id="editId">
-            
+
             <div class="form-group">
                 <label for="editTanggal">Tanggal *</label>
                 <input type="text" id="editTanggal" placeholder="DD/MM/YYYY" required pattern="\d{2}/\d{2}/\d{4}">
@@ -326,7 +326,8 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 20px;
-        margin-bottom: 25px; /* Space between cards and table */
+        margin-bottom: 25px;
+        /* Space between cards and table */
     }
 
     .summary-card {
@@ -392,7 +393,8 @@
     /* Table Wrapper - Scrollable */
     .table-wrapper {
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scroll on iOS */
     }
 
     table {
@@ -423,7 +425,8 @@
     }
 
     /* Nominal and Saldo columns - monospace font for better readability */
-    td:nth-child(3), td:nth-child(4) {
+    td:nth-child(3),
+    td:nth-child(4) {
         font-family: 'Consolas', 'Monaco', monospace;
         font-weight: 600;
     }
@@ -546,7 +549,7 @@
 
 <script>
     const API_URL = '{{ route("laporan.transactions") }}';
-    const PDF_URL = '{{ route("laporan.export.pdf") }}';
+    const PDF_URL = '{{ route("laporan.export.pdf.secure") }}';
 
     document.getElementById('btnCari').addEventListener('click', fetchTransactions);
     document.getElementById('btnDownloadPdf').addEventListener('click', downloadPdf);
@@ -721,34 +724,38 @@
 
     function formatDate(dateStr) {
         const date = new Date(dateStr);
-        return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
     }
 
     // Edit Transaction
     async function editTransaction(id, jenis, kategori, jumlah, keterangan, tanggal) {
         document.getElementById('editId').value = id;
-        
+
         // Convert tanggal dari YYYY-MM-DD ke DD/MM/YYYY untuk display
         if (tanggal) {
             const dateObj = new Date(tanggal);
             const day = String(dateObj.getDate()).padStart(2, '0');
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
             const year = dateObj.getFullYear();
-            
+
             // Set format DD/MM/YYYY untuk display
             document.getElementById('editTanggal').value = `${day}/${month}/${year}`;
             // Simpan format ISO di hidden field untuk backend
             document.getElementById('editTanggalISO').value = `${year}-${month}-${day}`;
         }
-        
+
         document.getElementById('editJenis').value = jenis;
         document.getElementById('editKategori').value = kategori;
         document.getElementById('editJumlah').value = jumlah;
         document.getElementById('editKeterangan').value = keterangan;
-        
+
         // Load budgets and goals
         await loadEditDropdowns(id);
-        
+
         document.getElementById('editModal').style.display = 'flex';
     }
 
@@ -790,11 +797,11 @@
         event.preventDefault();
 
         const id = document.getElementById('editId').value;
-        
+
         // Convert tanggal dari DD/MM/YYYY ke YYYY-MM-DD untuk backend
         const tanggalDisplay = document.getElementById('editTanggal').value;
         let tanggalISO = document.getElementById('editTanggalISO').value;
-        
+
         // Jika user ubah tanggal, parse dari format DD/MM/YYYY
         if (tanggalDisplay) {
             const parts = tanggalDisplay.split('/');
@@ -805,7 +812,7 @@
                 tanggalISO = `${year}-${month}-${day}`;
             }
         }
-        
+
         const data = {
             tanggal: tanggalISO,
             jenis: document.getElementById('editJenis').value,
@@ -818,7 +825,7 @@
 
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
+
             const response = await fetch(`/api/transactions/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -878,7 +885,7 @@
 
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
+
             const response = await fetch(`/api/transactions/${id}`, {
                 method: 'DELETE',
                 headers: {

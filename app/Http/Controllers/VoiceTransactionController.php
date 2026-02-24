@@ -12,7 +12,7 @@ class VoiceTransactionController extends Controller
      * Store a new voice transaction
      * 
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
@@ -37,8 +37,8 @@ class VoiceTransactionController extends Controller
                 'kategori' => $validated['kategori'],
                 'jumlah' => $validated['jumlah'],
                 'keterangan' => $validated['keterangan'],
-                'budget_id' => $validated['budget_id'] ?? null, // ← ADDED
-                'goal_id' => $validated['goal_id'] ?? null,     // ← ADDED
+                'budget_id' => $validated['budget_id'] ?? null,
+                'goal_id' => $validated['goal_id'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -46,17 +46,17 @@ class VoiceTransactionController extends Controller
             // 2. Update budget jika ada alokasi budget
             if (!empty($validated['budget_id'])) {
                 $budget = DB::table('budget')->where('id', $validated['budget_id'])->first();
-                
+
                 if ($budget) {
                     $newJumlahBerjalan = $budget->jumlahBerjalan + $validated['jumlah'];
-                    
+
                     DB::table('budget')
                         ->where('id', $validated['budget_id'])
                         ->update([
                             'jumlahBerjalan' => $newJumlahBerjalan,
                             'updated_at' => now()
                         ]);
-                    
+
                     Log::info("Budget updated: {$budget->namaBudget}, new amount: {$newJumlahBerjalan}");
                 }
             }
@@ -64,53 +64,31 @@ class VoiceTransactionController extends Controller
             // 3. Update goal jika ada alokasi goal
             if (!empty($validated['goal_id'])) {
                 $goal = DB::table('goals')->where('id', $validated['goal_id'])->first();
-                
+
                 if ($goal) {
                     $newNominalBerjalan = $goal->nominalBerjalan + $validated['jumlah'];
-                    
+
                     DB::table('goals')
                         ->where('id', $validated['goal_id'])
                         ->update([
                             'nominalBerjalan' => $newNominalBerjalan,
                             'updated_at' => now()
                         ]);
-                    
+
                     Log::info("Goal updated: {$goal->namaGoal}, new amount: {$newNominalBerjalan}");
                 }
             }
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaksi berhasil disimpan',
-                'data' => [
-                    'transaction_id' => $transactionId,
-                    'jenis' => $validated['jenis'],
-                    'kategori' => $validated['kategori'],
-                    'jumlah' => $validated['jumlah']
-                ]
-            ], 201);
-
+            return redirect()->back()->with('success', 'Transaksi berhasil disimpan');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
-
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            
             Log::error('Error saving voice transaction: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat menyimpan transaksi',
-                'error' => $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage());
         }
     }
 
@@ -119,7 +97,7 @@ class VoiceTransactionController extends Controller
      * 
      * @param Request $request
      * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $id)
     {
@@ -131,10 +109,7 @@ class VoiceTransactionController extends Controller
                 ->first();
 
             if (!$transaction) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaksi tidak ditemukan'
-                ], 404);
+                return redirect()->back()->with('error', 'Transaksi tidak ditemukan');
             }
 
             // Validate input
@@ -212,30 +187,14 @@ class VoiceTransactionController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaksi berhasil diperbarui'
-            ]);
-
+            return redirect()->back()->with('success', 'Transaksi berhasil diperbarui');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
-
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            
             Log::error('Error updating transaction: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat memperbarui transaksi',
-                'error' => $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui transaksi: ' . $e->getMessage());
         }
     }
 
@@ -243,7 +202,7 @@ class VoiceTransactionController extends Controller
      * Delete a transaction
      * 
      * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy($id)
     {
@@ -255,10 +214,7 @@ class VoiceTransactionController extends Controller
                 ->first();
 
             if (!$transaction) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaksi tidak ditemukan'
-                ], 404);
+                return redirect()->back()->with('error', 'Transaksi tidak ditemukan');
             }
 
             DB::beginTransaction();
@@ -293,21 +249,11 @@ class VoiceTransactionController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaksi berhasil dihapus'
-            ]);
-
+            return redirect()->back()->with('success', 'Transaksi berhasil dihapus');
         } catch (\Exception $e) {
             DB::rollBack();
-            
             Log::error('Error deleting transaction: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat menghapus transaksi',
-                'error' => $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus transaksi: ' . $e->getMessage());
         }
     }
 
@@ -328,10 +274,9 @@ class VoiceTransactionController extends Controller
                 'success' => true,
                 'data' => $budgets
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error fetching budgets: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data budget'
@@ -356,10 +301,9 @@ class VoiceTransactionController extends Controller
                 'success' => true,
                 'data' => $goals
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error fetching goals: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data goals'
@@ -384,7 +328,7 @@ class VoiceTransactionController extends Controller
 
             $lowerText = strtolower($text);
             $userId = auth()->id();
-            
+
             $data = [
                 'jenis' => 'Pengeluaran', // Default
                 'kategori' => 'Lainnya',
@@ -414,49 +358,170 @@ class VoiceTransactionController extends Controller
             // 3. Deteksi Kategori Dasar (Fallback) - DENGAN KATA GAUL
             $kategoriMap = [
                 'Makanan' => [
-                    'makan', 'minum', 'nasi', 'kopi', 'snack', 'jajan', 'warteg', 'restoran', 'cafe', 'roti', 'mie', 'bakso', 'soto', 'ayam', 'sate',
-                    // Kata gaul:
-                    'nasdang', 'naspad', 'nasi padang', 'mcd', 'kfc', 'mekdi', 'ricebowl', 'geprek', 'ngopi', 'nongkrong'
+                    'makan',
+                    'minum',
+                    'nasi',
+                    'kopi',
+                    'snack',
+                    'jajan',
+                    'warteg',
+                    'restoran',
+                    'cafe',
+                    'roti',
+                    'mie',
+                    'bakso',
+                    'soto',
+                    'ayam',
+                    'sate',
+                    'nasdang',
+                    'naspad',
+                    'nasi padang',
+                    'mcd',
+                    'kfc',
+                    'mekdi',
+                    'ricebowl',
+                    'geprek',
+                    'ngopi',
+                    'nongkrong'
                 ],
                 'Transportasi' => [
-                    'bensin', 'parkir', 'grab', 'gojek', 'tol', 'angkot', 'kereta', 'bus', 'ojek', 'taksi', 'uber', 'bengkel', 'transport', 'ojol',
-                    // Kata gaul:
-                    'goceng parkir', 'gocar', 'grabcar', 'grabbike', 'gojek', 'ojol'
+                    'bensin',
+                    'parkir',
+                    'grab',
+                    'gojek',
+                    'tol',
+                    'angkot',
+                    'kereta',
+                    'bus',
+                    'ojek',
+                    'taksi',
+                    'uber',
+                    'bengkel',
+                    'transport',
+                    'ojol',
+                    'goceng parkir',
+                    'gocar',
+                    'grabcar',
+                    'grabbike',
+                    'gojek',
+                    'ojol'
                 ],
                 'Belanja' => [
-                    'beli', 'belanja', 'supermarket', 'indomaret', 'alfamart', 'pasar', 'mall', 'shopee', 'tokopedia', 'baju', 'celana', 'skincare', 'kosmetik',
-                    // Kata gaul:
-                    'tokped', 'shopee', 'lazada', 'olshop', 'online shop', 'beli baju', 'shopping'
+                    'beli',
+                    'belanja',
+                    'supermarket',
+                    'indomaret',
+                    'alfamart',
+                    'pasar',
+                    'mall',
+                    'shopee',
+                    'tokopedia',
+                    'baju',
+                    'celana',
+                    'skincare',
+                    'kosmetik',
+                    'tokped',
+                    'shopee',
+                    'lazada',
+                    'olshop',
+                    'online shop',
+                    'beli baju',
+                    'shopping'
                 ],
                 'Hiburan' => [
-                    'nonton', 'bioskop', 'game', 'main', 'spotify', 'netflix', 'youtube premium', 'konser',
-                    // Kata gaul:
-                    'netflik', 'ngefilm', 'ngegame', 'mlbb', 'mobile legend', 'pubg', 'steam'
+                    'nonton',
+                    'bioskop',
+                    'game',
+                    'main',
+                    'spotify',
+                    'netflix',
+                    'youtube premium',
+                    'konser',
+                    'netflik',
+                    'ngefilm',
+                    'ngegame',
+                    'mlbb',
+                    'mobile legend',
+                    'pubg',
+                    'steam'
                 ],
                 'Jalan-Jalan' => [
-                    'liburan', 'wisata', 'jalan-jalan', 'traveling', 'trip', 'vacation', 'hotel', 'penginapan',
-                    // Kata gaul:
-                    'jalan', 'jalan jalan', 'piknik', 'refreshing', 'staycation'
+                    'liburan',
+                    'wisata',
+                    'jalan-jalan',
+                    'traveling',
+                    'trip',
+                    'vacation',
+                    'hotel',
+                    'penginapan',
+                    'jalan',
+                    'jalan jalan',
+                    'piknik',
+                    'refreshing',
+                    'staycation'
                 ],
                 'Tagihan' => [
-                    'listrik', 'air', 'internet', 'wifi', 'pulsa', 'paket data', 'pln', 'pdam', 'bpjs', 'asuransi', 'cicilan', 'kredit', 'pinjaman',
-                    // Kata gaul:
-                    'bayar listrik', 'token listrik', 'beli pulsa', 'isi pulsa', 'kuota'
+                    'listrik',
+                    'air',
+                    'internet',
+                    'wifi',
+                    'pulsa',
+                    'paket data',
+                    'pln',
+                    'pdam',
+                    'bpjs',
+                    'asuransi',
+                    'cicilan',
+                    'kredit',
+                    'pinjaman',
+                    'bayar listrik',
+                    'token listrik',
+                    'beli pulsa',
+                    'isi pulsa',
+                    'kuota'
                 ],
                 'Kesehatan' => [
-                    'obat', 'dokter', 'rumah sakit', 'klinik', 'vitamin', 'masker', 'medical', 'checkup', 'lab',
-                    // Kata gaul:
-                    'ke dokter', 'berobat', 'beli obat', 'apotek'
+                    'obat',
+                    'dokter',
+                    'rumah sakit',
+                    'klinik',
+                    'vitamin',
+                    'masker',
+                    'medical',
+                    'checkup',
+                    'lab',
+                    'ke dokter',
+                    'berobat',
+                    'beli obat',
+                    'apotek'
                 ],
                 'Pendidikan' => [
-                    'buku', 'sekolah', 'kursus', 'kuliah', 'spp', 'les', 'seminar', 'workshop', 'training',
-                    // Kata gaul:
-                    'bayar spp', 'beli buku', 'kursus online', 'udemy', 'coursera'
+                    'buku',
+                    'sekolah',
+                    'kursus',
+                    'kuliah',
+                    'spp',
+                    'les',
+                    'seminar',
+                    'workshop',
+                    'training',
+                    'bayar spp',
+                    'beli buku',
+                    'kursus online',
+                    'udemy',
+                    'coursera'
                 ],
                 'Sedekah' => [
-                    'sedekah', 'infaq', 'zakat', 'donasi', 'sumbangan', 'amal', 'charity',
-                    // Kata gaul:
-                    'nyumbang', 'derma', 'bantuan'
+                    'sedekah',
+                    'infaq',
+                    'zakat',
+                    'donasi',
+                    'sumbangan',
+                    'amal',
+                    'charity',
+                    'nyumbang',
+                    'derma',
+                    'bantuan'
                 ],
                 'Tabungan' => ['nabung', 'tabung', 'saving', 'simpan', 'investasi'],
                 'Gaji' => ['gaji', 'salary', 'upah', 'honor'],
@@ -472,7 +537,7 @@ class VoiceTransactionController extends Controller
                     }
                 }
             }
-            
+
             // 4. SMART DETECTION: Cek Budget User
             $budgets = DB::table('budget')
                 ->where('user_id', $userId)
@@ -483,11 +548,11 @@ class VoiceTransactionController extends Controller
                     $data['budget_id'] = $budget->id;
                     $data['budget_name'] = $budget->namaBudget;
                     $data['jenis'] = 'Pengeluaran';
-                    
+
                     if ($data['kategori'] == 'Lainnya' && $budget->kategori) {
                         $data['kategori'] = $budget->kategori;
                     }
-                    
+
                     Log::info("Smart Match: Budget '{$budget->namaBudget}' detected.");
                     break;
                 }
@@ -504,7 +569,7 @@ class VoiceTransactionController extends Controller
                     $data['goal_name'] = $goal->namaGoal;
                     $data['jenis'] = 'Pengeluaran';
                     $data['kategori'] = 'Tabungan';
-                    
+
                     Log::info("Smart Match: Goal '{$goal->namaGoal}' detected.");
                     break;
                 }
@@ -512,7 +577,7 @@ class VoiceTransactionController extends Controller
 
             // 6. Clean up description - HAPUS kata mata uang dan angka
             $data['keterangan'] = $this->cleanDescription($text, $lowerText);
-            
+
             // 7. Jika jenis Pemasukan tapi kategori masih Lainnya, coba tebak
             if ($data['jenis'] == 'Pemasukan' && $data['kategori'] == 'Lainnya') {
                 if (strpos($lowerText, 'gaji') !== false) $data['kategori'] = 'Gaji';
@@ -525,10 +590,9 @@ class VoiceTransactionController extends Controller
                 'data' => $data,
                 'raw_text' => $text
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error parsing voice text: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat parsing text',
@@ -543,7 +607,7 @@ class VoiceTransactionController extends Controller
     private function detectJumlah($text)
     {
         $jumlah = 0;
-        
+
         // 1. Coba deteksi angka dengan format digit (10.000, 50rb, 2.5jt, dll)
         if (preg_match('/(\d+(?:[\\.,]\d+)*)\s*(ribu|juta|rb|jt|k|m|rp|rupiah)?/i', $text, $matches)) {
             $modifier = strtolower($matches[2] ?? '');
@@ -556,129 +620,122 @@ class VoiceTransactionController extends Controller
                 $cleanNumStr = str_replace(',', '.', $matches[1]);
                 $baseNumber = floatval($cleanNumStr) * 1000000;
             } else {
-                // Angka tanpa modifier atau dengan "rp"/"rupiah"
-                // Hapus semua titik dan koma, lalu convert
                 $cleanNumStr = preg_replace('/[.,]/', '', $matches[1]);
                 $baseNumber = floatval($cleanNumStr);
             }
-            
+
             $jumlah = $baseNumber;
         }
-        
+
         // 2. Jika tidak ada angka digit, coba deteksi terbilang
         if ($jumlah == 0) {
             $jumlah = $this->terbilangKeAngka($text);
         }
-        
+
         return $jumlah;
     }
 
     /**
-     * Convert terbilang ke angka (dari file lama yang sudah proven works!)
-     * Contoh: "lima puluh ribu" → 50000
+     * Convert terbilang ke angka
      */
     private function terbilangKeAngka($text)
     {
         $angkaMap = [
-            'nol' => 0, 'satu' => 1, 'dua' => 2, 'tiga' => 3, 'empat' => 4, 'lima' => 5,
-            'enam' => 6, 'tujuh' => 7, 'delapan' => 8, 'sembilan' => 9, 'sepuluh' => 10,
-            'sebelas' => 11, 'belas' => 10, 'puluh' => 10, 'ratus' => 100, 'ribu' => 1000,
-            'juta' => 1000000, 'miliar' => 1000000000, 'triliun' => 1000000000000
+            'nol' => 0,
+            'satu' => 1,
+            'dua' => 2,
+            'tiga' => 3,
+            'empat' => 4,
+            'lima' => 5,
+            'enam' => 6,
+            'tujuh' => 7,
+            'delapan' => 8,
+            'sembilan' => 9,
+            'sepuluh' => 10,
+            'sebelas' => 11,
+            'belas' => 10,
+            'puluh' => 10,
+            'ratus' => 100,
+            'ribu' => 1000,
+            'juta' => 1000000,
+            'miliar' => 1000000000,
+            'triliun' => 1000000000000
         ];
 
         $total = 0;
         $currentVal = 0;
-        
-        // Perbaiki kata khusus
-        $text = str_replace('seribu', 'satu ribu', $text);
-        $text = str_replace('seratus', 'satu ratus', $text);
-        
+
+        $text = str_replace(['seribu', 'seratus'], ['satu ribu', 'satu ratus'], $text);
         $words = explode(' ', strtolower($text));
-        
+
         foreach ($words as $word) {
-            // Skip jika bukan kata angka
-            if (!isset($angkaMap[$word])) {
-                continue;
-            }
-            
+            if (!isset($angkaMap[$word])) continue;
             $nilai = $angkaMap[$word];
-            
-            if ($nilai >= 1000) { // Multiplier: ribu, juta, dst.
+
+            if ($nilai >= 1000) {
                 $total += ($currentVal !== 0 ? $currentVal : 1) * $nilai;
                 $currentVal = 0;
-            } elseif ($nilai === 100) { // Ratus
+            } elseif ($nilai === 100) {
                 $currentVal = ($currentVal !== 0 ? $currentVal : 1) * $nilai;
-            } elseif ($nilai === 10) { // Puluh atau Belas
-                if ($currentVal > 0 && $currentVal < 10) {
-                    $currentVal += $nilai; // "lima belas" = 5 + 10 = 15
-                } else {
-                    $currentVal = ($currentVal !== 0 ? $currentVal : 1) * $nilai;
-                }
-            } else { // Satuan
+            } elseif ($nilai === 10) {
+                if ($currentVal > 0 && $currentVal < 10) $currentVal += $nilai;
+                else $currentVal = ($currentVal !== 0 ? $currentVal : 1) * $nilai;
+            } else {
                 $currentVal += $nilai;
             }
         }
-        
+
         return $total + $currentVal;
     }
 
     /**
      * Bersihkan deskripsi dari kata-kata yang tidak perlu
-     * Hapus: angka, "rp", "rupiah", kata jenis transaksi, dll
      */
     private function cleanDescription($originalText, $lowerText)
     {
-        // Kata-kata yang harus dihapus dari deskripsi
         $wordsToRemove = [
-            // Mata uang
-            'rp', 'rupiah', 'idr',
-            // Jenis transaksi
-            'pengeluaran', 'keluar', 'biaya', 'bayar', 'beli', 'pemasukan', 'masuk', 'pendapatan', 'dapat', 'terima',
-            // Kata perintah
-            'catat', 'tolong', 'untuk', 'sebesar',
-            // Modifier angka
-            'ribu', 'juta', 'miliar', 'rb', 'jt', 'k', 'm'
+            'rp',
+            'rupiah',
+            'idr',
+            'pengeluaran',
+            'keluar',
+            'biaya',
+            'bayar',
+            'beli',
+            'pemasukan',
+            'masuk',
+            'pendapatan',
+            'dapat',
+            'terima',
+            'catat',
+            'tolong',
+            'untuk',
+            'sebesar',
+            'ribu',
+            'juta',
+            'miliar',
+            'rb',
+            'jt',
+            'k',
+            'm'
         ];
-        
-        // Split text menjadi array kata
+
         $words = explode(' ', $lowerText);
         $originalWords = explode(' ', $originalText);
         $cleanWords = [];
-        
+
         for ($i = 0; $i < count($words); $i++) {
             $word = $words[$i];
-            
-            // Skip jika kata adalah angka (digit)
-            if (preg_match('/\d/', $word)) {
-                continue;
-            }
-            
-            // Skip jika kata adalah terbilang angka
-            $angkaWords = ['nol', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 
-                          'sepuluh', 'sebelas', 'belas', 'puluh', 'ratus', 'ribu', 'juta', 'miliar', 'triliun',
-                          'seribu', 'seratus'];
-            if (in_array($word, $angkaWords)) {
-                continue;
-            }
-            
-            // Skip jika kata ada di daftar kata yang harus dihapus
-            if (in_array($word, $wordsToRemove)) {
-                continue;
-            }
-            
-            // Jika lolos semua filter, masukkan ke clean words (pakai original case)
+            if (preg_match('/\d/', $word)) continue;
+
+            $angkaWords = ['nol', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas', 'belas', 'puluh', 'ratus', 'ribu', 'juta', 'miliar', 'triliun', 'seribu', 'seratus'];
+            if (in_array($word, $angkaWords)) continue;
+            if (in_array($word, $wordsToRemove)) continue;
+
             $cleanWords[] = $originalWords[$i];
         }
-        
+
         $cleanDescription = trim(implode(' ', $cleanWords));
-        
-        // Jika deskripsi kosong, gunakan teks asli tapi capitalize
-        if (empty($cleanDescription)) {
-            $cleanDescription = ucfirst($originalText);
-        } else {
-            $cleanDescription = ucfirst($cleanDescription);
-        }
-        
-        return $cleanDescription;
+        return empty($cleanDescription) ? ucfirst($originalText) : ucfirst($cleanDescription);
     }
 }

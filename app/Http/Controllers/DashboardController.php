@@ -14,14 +14,73 @@ class DashboardController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        
-        // Get total pemasukan
+
+        // Get current month and last month dates
+        $now = \Carbon\Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
+
+        $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
+        $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
+
+        // Get current month stats
+        $currentMonthPemasukan = DB::table('transaction')
+            ->where('user_id', $userId)
+            ->where('jenis', 'Pemasukan')
+            ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+            ->sum('jumlah');
+
+        $currentMonthPengeluaran = DB::table('transaction')
+            ->where('user_id', $userId)
+            ->where('jenis', 'Pengeluaran')
+            ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+            ->sum('jumlah');
+
+        // Get last month stats
+        $lastMonthPemasukan = DB::table('transaction')
+            ->where('user_id', $userId)
+            ->where('jenis', 'Pemasukan')
+            ->whereBetween('tanggal', [$startOfLastMonth, $endOfLastMonth])
+            ->sum('jumlah');
+
+        $lastMonthPengeluaran = DB::table('transaction')
+            ->where('user_id', $userId)
+            ->where('jenis', 'Pengeluaran')
+            ->whereBetween('tanggal', [$startOfLastMonth, $endOfLastMonth])
+            ->sum('jumlah');
+
+        // Calculate trends (percentage change)
+        $pemasukanTrend = $lastMonthPemasukan > 0
+            ? round((($currentMonthPemasukan - $lastMonthPemasukan) / $lastMonthPemasukan) * 100)
+            : 0;
+
+        $pengeluaranTrend = $lastMonthPengeluaran > 0
+            ? round((($currentMonthPengeluaran - $lastMonthPengeluaran) / $lastMonthPengeluaran) * 100)
+            : 0;
+
+        // Calculate Smart Analysis (Comparing expenses)
+        // If current month expenditure is LOWER than last month, it's a saving.
+        $savingsPercentage = 0;
+        $analysisMessage = "Mulai catat transaksi Anda untuk mendapatkan analisis cerdas!";
+
+        if ($lastMonthPengeluaran > 0) {
+            if ($currentMonthPengeluaran < $lastMonthPengeluaran) {
+                $savingsPercentage = round((($lastMonthPengeluaran - $currentMonthPengeluaran) / $lastMonthPengeluaran) * 100);
+                $analysisMessage = "Anda hemat {$savingsPercentage}% lebih banyak dibanding bulan lalu!";
+            } else {
+                $increasePercentage = round((($currentMonthPengeluaran - $lastMonthPengeluaran) / $lastMonthPengeluaran) * 100);
+                $analysisMessage = "Pengeluaran Anda naik {$increasePercentage}% dibanding bulan lalu. Tetap pantau budget Anda!";
+            }
+        } elseif ($currentMonthPengeluaran > 0) {
+            $analysisMessage = "Analisis akan lebih akurat setelah data bulan depan tersedia.";
+        }
+
+        // Get total stats (all time)
         $totalPemasukan = DB::table('transaction')
             ->where('user_id', $userId)
             ->where('jenis', 'Pemasukan')
             ->sum('jumlah');
 
-        // Get total pengeluaran
         $totalPengeluaran = DB::table('transaction')
             ->where('user_id', $userId)
             ->where('jenis', 'Pengeluaran')
@@ -40,16 +99,16 @@ class DashboardController extends Controller
 
         if ($allGoals->isNotEmpty()) {
             // Calculate nominalBerjalan from transactions for each goal
-            $goalsWithProgress = $allGoals->map(function($g) use ($userId) {
+            $goalsWithProgress = $allGoals->map(function ($g) use ($userId) {
                 // Sum all transactions allocated to this goal
                 $nominalBerjalan = DB::table('transaction')
                     ->where('user_id', $userId)
                     ->where('goal_id', $g->id)
                     ->sum('jumlah');
-                
+
                 $g->nominalBerjalan = $nominalBerjalan;
                 $g->percentage = $g->targetNominal > 0 ? ($nominalBerjalan / $g->targetNominal) * 100 : 0;
-                
+
                 return $g;
             });
 
@@ -75,15 +134,24 @@ class DashboardController extends Controller
             ->where('user_id', $userId)
             ->get();
 
-        return view('dashboard', compact(
-            'saldo',
-            'totalPemasukan',
-            'totalPengeluaran',
-            'goal',
-            'goalPercentage',
-            'recentTransactions',
-            'allBudgets',
-            'goals'
-        ));
+        return inertia('Dashboard', [
+            'stats' => [
+                'saldo' => $saldo,
+                'totalPemasukan' => $currentMonthPemasukan, // Use current month for the cards
+                'totalPengeluaran' => $currentMonthPengeluaran,
+                'pemasukanTrend' => $pemasukanTrend,
+                'pengeluaranTrend' => $pengeluaranTrend,
+            ],
+            'analysis' => [
+                'title' => $lastMonthPengeluaran > 0 ? "Analisis Cerdas Sudah Siap." : "Halo! Mulailah Mencatat.",
+                'percentage' => $savingsPercentage,
+                'message' => $analysisMessage,
+            ],
+            'goal' => $goal,
+            'goalPercentage' => $goalPercentage,
+            'recentTransactions' => $recentTransactions,
+            'budgets' => $allBudgets,
+            'goals' => $goals,
+        ]);
     }
 }

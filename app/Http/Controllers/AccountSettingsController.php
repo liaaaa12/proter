@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AccountSettingsController extends Controller
 {
@@ -16,8 +17,17 @@ class AccountSettingsController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
-        return view('settings', compact('user'));
+
+        return inertia('Settings', [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'avatar_url' => $user->avatar_url,
+                'voice_enrolled_at' => $user->voice_enrolled_at ? $user->voice_enrolled_at->format('d M Y') : null,
+            ]
+        ]);
     }
 
     /**
@@ -25,72 +35,56 @@ class AccountSettingsController extends Controller
      */
     public function update(Request $request)
     {
-        try {
-            // Validasi input
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'phone' => 'required|string|max:20',
-                'current_password' => 'nullable|string',
-                'password' => 'nullable|min:8|confirmed',
-            ]);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'avatar_file' => 'nullable|image|max:2048',
+            'current_password' => 'nullable|string',
+            'password' => 'nullable|min:8|confirmed',
+        ]);
 
-            $user = Auth::user();
+        $user = Auth::user();
+        $updateData = [
+            'name' => $validated['name'],
+            'phone' => $validated['phone'],
+            'email' => $validated['email'],
+            'updated_at' => now()
+        ];
 
-            // Update nama dan telepon
+        // Handle avatar upload
+        if ($request->hasFile('avatar_file')) {
+            // Delete old avatar if exists
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $path = $request->file('avatar_file')->store('avatars', 'public');
+            $updateData['avatar'] = $path;
+        }
+
+        // Update profile
+        DB::table('users')
+            ->where('id', $user->id)
+            ->update($updateData);
+
+        // Update password jika diisi
+        if (!empty($validated['password'])) {
+            if (empty($request->current_password)) {
+                return redirect()->back()->with('error', 'Password lama harus diisi untuk mengubah password');
+            }
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return redirect()->back()->with('error', 'Password lama yang Anda masukkan salah');
+            }
+
             DB::table('users')
                 ->where('id', $user->id)
                 ->update([
-                    'name' => $validated['name'],
-                    'phone' => $validated['phone'],
+                    'password' => Hash::make($validated['password']),
                     'updated_at' => now()
                 ]);
-
-            // Update password jika diisi
-            if (!empty($validated['password'])) {
-                // VALIDASI PASSWORD LAMA
-                if (empty($request->current_password)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Password lama harus diisi untuk mengubah password'
-                    ], 422);
-                }
-
-                // Cek apakah password lama benar
-                if (!Hash::check($request->current_password, $user->password)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Password lama yang Anda masukkan salah'
-                    ], 422);
-                }
-
-                // Jika password lama benar, update password baru
-                DB::table('users')
-                    ->where('id', $user->id)
-                    ->update([
-                        'password' => Hash::make($validated['password']),
-                        'updated_at' => now()
-                    ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Pengaturan akun berhasil diperbarui'
-            ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
-
-        } catch (\Exception $e) {
-            Log::error('Error updating account settings: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat memperbarui pengaturan'
-            ], 500);
         }
+
+        return redirect()->back()->with('success', 'Pengaturan akun berhasil diperbarui');
     }
 }
