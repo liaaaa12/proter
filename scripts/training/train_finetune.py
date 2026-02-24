@@ -267,7 +267,7 @@ def train(args):
     
     model_path = os.path.join(PROJECT_DIR, "pretrained_models", "spkrec-ecapa-voxceleb", "embedding_model.ckpt")
     if os.path.exists(model_path):
-        model.load_state_dict(torch.load(model_path, map_location=DEVICE, weights_only=True))
+        model.load_state_dict(torch.load(model_path, map_location=DEVICE, weights_only=False))
         print("✅ Loaded pretrained weights")
     
     mel_spec = T.MelSpectrogram(
