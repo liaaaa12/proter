@@ -10,7 +10,7 @@ return [
     |
     */
 
-    'python_path' => env('VOICE_PYTHON_PATH', base_path('.venv/Scripts/python.exe')),
+    'python_path' => env('PYTHON_EXEC', base_path('.venv/Scripts/python.exe')),
 
     'script_path' => base_path('scripts/voice_processor_ecapa.py'),
 
