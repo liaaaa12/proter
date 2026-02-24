@@ -49,8 +49,8 @@ class AntiSpoofingDetector:
         # Load AASIST model
         self.model = AASIST(MODEL_CONFIG)
         
-        # Load checkpoint
-        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
+        # Load checkpoint (set weights_only=False for PyTorch 2.6+ compatibility with older models)
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
         self.model.load_state_dict(checkpoint)
         self.model.to(device)
         self.model.eval()

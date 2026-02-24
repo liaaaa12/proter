@@ -81,7 +81,7 @@ class EcapaTdnnVerifier:
             raise FileNotFoundError(f"Model not found at {base_path} or {finetuned_path}")
             
         if os.path.exists(ckpt_path):
-            state_dict = torch.load(ckpt_path, map_location=device, weights_only=True)
+            state_dict = torch.load(ckpt_path, map_location=device, weights_only=False)
             self.embedding_model.load_state_dict(state_dict)
             print(f"Loaded model from {ckpt_path}", file=sys.stderr)
         else:

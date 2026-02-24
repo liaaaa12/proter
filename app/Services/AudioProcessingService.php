@@ -76,8 +76,11 @@ class AudioProcessingService
         $outputPath = $inputPath . '_normalized.wav';
 
         // Command: ffmpeg -y -i input -ar 16000 -ac 1 output.wav
+        // Use configured FFmpeg path (defaults to 'ffmpeg' in system PATH)
+        $ffmpegPath = config('voice.ffmpeg_path', 'ffmpeg');
+
         $process = new Process([
-            'ffmpeg',
+            $ffmpegPath,
             '-y',
             '-i',
             $inputPath,
