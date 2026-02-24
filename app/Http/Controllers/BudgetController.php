@@ -25,7 +25,7 @@ class BudgetController extends Controller
             'Tagihan' => '💳',
             'Lainnya' => '💰',
         ];
-        
+
         return $icons[$kategori] ?? '💰';
     }
 
@@ -36,30 +36,30 @@ class BudgetController extends Controller
     {
         $user = Auth::user();
         $periode = $request->input('periode', date('Y-m')); // Default: bulan ini
-        
+
         // Get budgets for selected period
         $budgets = DB::table('budget')
             ->where('user_id', $user->id)
             ->where('periode', $periode)
             ->get();
-        
+
         // Calculate terpakai for each budget from transactions
-        $budgetsWithProgress = $budgets->map(function($budget) use ($periode) {
+        $budgetsWithProgress = $budgets->map(function ($budget) use ($periode) {
             // Get total pengeluaran for this SPECIFIC budget (by budget_id)
             $startDate = Carbon::parse($periode . '-01')->startOfMonth();
             $endDate = Carbon::parse($periode . '-01')->endOfMonth();
-            
+
             // Only count transactions that are specifically allocated to this budget
             $terpakai = DB::table('transaction')
                 ->where('user_id', $budget->user_id)
-                ->where('budget_id', $budget->id) // ← CHANGED: Use budget_id instead of kategori
+                ->where('budget_id', $budget->id)
                 ->where('jenis', 'Pengeluaran')
                 ->whereBetween('tanggal', [$startDate, $endDate])
                 ->sum('jumlah');
-            
+
             $persentase = $budget->jumlah > 0 ? ($terpakai / $budget->jumlah) * 100 : 0;
             $sisa = $budget->jumlah - $terpakai;
-            
+
             return [
                 'id' => $budget->id,
                 'namaBudget' => $budget->namaBudget,
@@ -75,20 +75,25 @@ class BudgetController extends Controller
                 'periode' => $budget->periode,
             ];
         });
-        
+
         // Get all budgets for voice modal dropdown
         $allBudgets = DB::table('budget')
             ->where('user_id', $user->id)
             ->select('id', 'namaBudget', 'kategori')
             ->get();
-        
+
         // Get all goals for voice modal dropdown
         $goals = DB::table('goals')
             ->where('user_id', $user->id)
             ->select('id', 'namaGoal')
             ->get();
-        
-        return view('anggaran', compact('budgetsWithProgress', 'periode', 'allBudgets', 'goals'));
+
+        return inertia('Budgeting', [
+            'budgetsWithProgress' => $budgetsWithProgress,
+            'periode' => $periode,
+            'allBudgets' => $allBudgets,
+            'goals' => $goals
+        ]);
     }
 
     /**
@@ -102,12 +107,12 @@ class BudgetController extends Controller
             'jumlah' => 'required|numeric|min:0',
             'periode' => 'required|date_format:Y-m',
         ]);
-        
+
         $user = Auth::user();
-        
+
         // Get icon based on category
         $icon = $this->getCategoryIcon($request->kategori);
-        
+
         DB::table('budget')->insert([
             'user_id' => $user->id,
             'namaBudget' => $request->namaBudget,
@@ -119,11 +124,8 @@ class BudgetController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Budget berhasil ditambahkan!'
-        ]);
+
+        return redirect()->back()->with('success', 'Budget berhasil ditambahkan!');
     }
 
     /**
@@ -136,25 +138,22 @@ class BudgetController extends Controller
             'kategori' => 'required|string',
             'jumlah' => 'required|numeric|min:0',
         ]);
-        
+
         $user = Auth::user();
-        
+
         // Check if budget exists and belongs to user
         $budget = DB::table('budget')
             ->where('id', $id)
             ->where('user_id', $user->id)
             ->first();
-        
+
         if (!$budget) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Budget tidak ditemukan!'
-            ], 404);
+            return redirect()->back()->with('error', 'Budget tidak ditemukan!');
         }
-        
+
         // Get icon based on category
         $icon = $this->getCategoryIcon($request->kategori);
-        
+
         DB::table('budget')
             ->where('id', $id)
             ->update([
@@ -164,11 +163,8 @@ class BudgetController extends Controller
                 'jumlah' => $request->jumlah,
                 'updated_at' => now(),
             ]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Budget berhasil diupdate!'
-        ]);
+
+        return redirect()->back()->with('success', 'Budget berhasil diupdate!');
     }
 
     /**
@@ -177,27 +173,22 @@ class BudgetController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
-        
+
         // Check if budget exists and belongs to user
         $budget = DB::table('budget')
             ->where('id', $id)
             ->where('user_id', $user->id)
             ->first();
-        
+
         if (!$budget) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Budget tidak ditemukan!'
-            ], 404);
+            return redirect()->back()->with('error', 'Budget tidak ditemukan!');
         }
-        
+
         DB::table('budget')->where('id', $id)->delete();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Budget berhasil dihapus!'
-        ]);
+
+        return redirect()->back()->with('success', 'Budget berhasil dihapus!');
     }
+
     /**
      * Get transactions for a specific budget
      */
@@ -215,7 +206,7 @@ class BudgetController extends Controller
 
         $transactions = DB::table('transaction')
             ->where('user_id', $user->id)
-            ->where('kategori', $budget->kategori)
+            ->where('budget_id', $id) // Use budget_id for accuracy
             ->where('jenis', 'Pengeluaran')
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderBy('tanggal', 'desc')

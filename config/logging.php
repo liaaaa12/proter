@@ -89,7 +89,7 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
+                'connectionString' => 'tls://' . env('PAPERTRAIL_URL') . ':' . env('PAPERTRAIL_PORT'),
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],
@@ -125,6 +125,15 @@ return [
 
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
+        ],
+
+        // Voice Verification dedicated log channel
+        'voice_verification' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/voice_verification.log'),
+            'level' => 'debug',
+            'days' => 30, // Keep 30 days for analysis
+            'replace_placeholders' => true,
         ],
 
     ],
