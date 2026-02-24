@@ -14,6 +14,8 @@ return [
 
     'script_path' => base_path('scripts/voice_processor_ecapa.py'),
 
+    'ffmpeg_path' => env('FFMPEG_PATH', 'ffmpeg'),
+
     'log_channel' => 'voice_verification',
 
     'timeout' => 30, // seconds
