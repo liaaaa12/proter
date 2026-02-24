@@ -10,15 +10,27 @@ Sebelum melakukan push, jalankan perintah ini di lokal untuk membersihkan file G
 # Menghapus file GSD dari index agar tidak masuk GitHub
 git rm -r --cached .planning/
 
-# Tambahkan model AI ke tracking (karena sebelumnya diabaikan atau belum masuk)
-git add pretrained_models/
+# Aktivasi Git LFS (Hanya perlu sekali)
+git lfs install
+git lfs track "*.ckpt"
+git lfs track "*.pth"
+git add .gitattributes
 
-# Commit dan Push
-git commit -m "chore: exclude GSD and include AI models for update"
-git push
+# Tambahkan model AI dan push
+git add pretrained_models/
+git commit -m "chore: use Git LFS for AI models and exclude GSD"
+git push origin feature/deployment-lfs
 ```
 
-## 2. Struktur Folder di cPanel
+## 2. Pull Request (PR)
+
+Karena branch `main` diproteksi:
+
+1. Masuk ke GitHub.
+2. Buat Pull Request dari branch `feature/deployment-lfs` ke `main`.
+3. Merge PR tersebut ke `main`.
+
+## 3. Struktur Folder di cPanel
 
 Disarankan untuk meletakkan file Laravel di luar folder `public_html` demi keamanan:
 
@@ -34,7 +46,7 @@ Disarankan untuk meletakkan file Laravel di luar folder `public_html` demi keama
     └── assets/
 ```
 
-## 3. Setup Python di cPanel
+## 4. Setup Python di cPanel
 
 1. Masuk ke cPanel > **Setup Python App**.
 2. Klik **Create Application**.
@@ -43,24 +55,48 @@ Disarankan untuk meletakkan file Laravel di luar folder `public_html` demi keama
 5. **Application URL**: (Bisa diisi domain/subdomain).
 6. Setelah aplikasi dibuat, masuk ke terminal cPanel dan jalankan perintah yang muncul di panel Python App (biasanya `source .../bin/activate`).
 7. Update pip: `pip install --upgrade pip`
-8. Install dependencies: `pip install -r requirements.txt`
+8. Install dependencies (PENTING):
+   Karena cPanel biasanya tidak punya GPU (CUDA), Anda **wajib** menginstall PyTorch versi CPU agar ukurannya tidak membengkak (bisa hemat 2GB+):
 
-## 4. Konfigurasi .env (Laravel)
+    ```bash
+    # Install Torch versi CPU dulu
+    pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-Pastikan path script Python di `.env` sudah benar:
+    # Baru install sisanya dari requirements.txt
+    pip install -r requirements.txt
+    ```
+
+## 5. Build Assets (NPM)
+
+Folder `node_modules` **tidak akan terbawa** ke GitHub (sesuai standar). Untuk aset (JS/CSS):
+
+1. **Opsi A (Build di Server)**: Jika cPanel Anda punya akses SSH dan Node.js, jalankan:
+    ```bash
+    npm install
+    npm run build
+    ```
+2. **Opsi B (Upload Manual)**: Jika tidak ada Node.js di server, jalankan `npm run build` di laptop Anda, lalu upload isi folder `public/build` ke cPanel secara manual via File Manager/FTP.
+
+## 6. Konfigurasi .env (Laravel)
+
+Pastikan path script Python di `.env` sudah benar. Contoh untuk Python 3.11:
 
 ```env
-PYTHON_EXEC=/home/username/nodevenv/proter_app/.../bin/python
-VOICE_PROCESSOR_SCRIPT=scripts/voice_processor_ecapa.py
-VOICE_MODELS_PATH=pretrained_models
+PYTHON_EXEC=/home/username/virtualenv/proter_app/3.11/bin/python
 ```
 
-## 5. Symlink Public
+_(Ingat: Gunakan path 'source' yang ada di cPanel Setup Python App, tapi ganti 'activate' di ujungnya menjadi 'python')_
+
+## 7. Symlink Public
 
 Jangan lupa menghubungkan folder `public` ke `public_html`:
 
 ```bash
 ln -s /home/username/proter_app/public /home/username/public_html
 ```
+
+## Tips: Git LFS di cPanel
+
+Karena model AI sekarang menggunakan LFS, pastikan Git di cPanel telah terinstall `git-lfs` jika Anda melakukan `git pull`. Jika tidak tersedia, Anda mungkin perlu melakukan upload manual khusus untuk folder `pretrained_models/`.
 
 _(Atau arahkan Document Root subdomain ke folder public)_
