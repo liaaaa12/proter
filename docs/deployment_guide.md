@@ -87,7 +87,28 @@ PYTHON_EXEC=/home/username/virtualenv/proter_app/3.11/bin/python
 
 _(Ingat: Gunakan path 'source' yang ada di cPanel Setup Python App, tapi ganti 'activate' di ujungnya menjadi 'python')_
 
-## 7. Symlink Public
+## 7. Solusi FFmpeg di cPanel (PENTING)
+
+Aplikasi ini butuh **FFmpeg** untuk mengonversi rekaman suara dari browser. Jika cPanel Anda tidak punya FFmpeg bawaan (`ffmpeg: command not found`), ikuti cara ini:
+
+1. Buka terminal cPanel, masuk ke folder project (`proter_app`).
+2. Download file FFmpeg statis:
+    ```bash
+    wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+    tar -xf ffmpeg-release-amd64-static.tar.xz
+    ```
+3. Pindahkan file `ffmpeg` ke folder project agar mudah:
+    ```bash
+    mv ffmpeg-*-amd64-static/ffmpeg ./ffmpeg_bin
+    chmod +x ffmpeg_bin
+    ```
+4. Tambahkan/Ubah configurasi di file `.env` Laravel Anda:
+    ```env
+    FFMPEG_PATH=/home/username/proter_app/ffmpeg_bin
+    ```
+    _(Sesuaikan `/home/username/proter_app` dengan path asli Anda di File Manager)_
+
+## 8. Symlink Public
 
 Jangan lupa menghubungkan folder `public` ke `public_html`:
 
