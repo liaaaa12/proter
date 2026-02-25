@@ -26,8 +26,10 @@ class VoiceProcessorService
 
         // Ensure crucial Windows environment variables are passed to the sub-process
         // This fixes WinError 10106 (Winsock initialization failure) on some Windows systems.
-        $env = [];
-        foreach (['SystemRoot', 'SystemDrive', 'PATH', 'TEMP', 'TMP'] as $var) {
+        $env = [
+            'HOME' => getenv('HOME') ?: base_path(), // Required by cPanel Python wrapper and SpeechBrain
+        ];
+        foreach (['SystemRoot', 'SystemDrive', 'PATH', 'TEMP', 'TMP', 'USER'] as $var) {
             if ($value = getenv($var)) {
                 $env[$var] = $value;
             }
