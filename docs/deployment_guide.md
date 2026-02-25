@@ -116,8 +116,18 @@ Jangan lupa menghubungkan folder `public` ke `public_html`:
 ln -s /home/username/proter_app/public /home/username/public_html
 ```
 
-## Tips: Git LFS di cPanel
+## 9. Tips: Git LFS di cPanel (PENTING)
 
-Karena model AI sekarang menggunakan LFS, pastikan Git di cPanel telah terinstall `git-lfs` jika Anda melakukan `git pull`. Jika tidak tersedia, Anda mungkin perlu melakukan upload manual khusus untuk folder `pretrained_models/`.
+Karena model AI (yang berukuran besar) sekarang menggunakan **Git LFS**, jika di cPanel Anda muncul error seperti:
+`Error: Anti-spoofing check failed: invalid load key, 'v'.`
+Itu artinya cPanel hanya mendownload "teks link" nya saja (pointer file LFS), bukan file model aslinya karena `git-lfs` tidak terinstall di cPanel Anda.
+
+**Cara Memperbaikinya:**
+Anda wajib **meng-upload manual** file model utuh dari laptop Anda (tempat LFS berfungsi) ke cPanel via File Manager. Folder yang wajib ditimpa secara manual:
+
+1. `pretrained_models/` (Timpa seluruh isinya)
+2. `scripts/aasist/models/weights/` (Penting untuk file `AASIST.pth`)
+
+_(Saran: Zip kedua folder ini di laptop, upload zip ke cPanel, lalu ekstrak dan timpa folder aslinya)._
 
 _(Atau arahkan Document Root subdomain ke folder public)_
