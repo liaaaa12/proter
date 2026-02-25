@@ -55,9 +55,6 @@ class VoiceEnrollmentService
                 }
 
                 Log::info("Voice enrolled successfully for user: " . ($user->id ?? 'new_user'));
-
-                // Add the path to extra for convenience
-                $result->extra['voice_path'] = $storagePath;
             }
 
             // 5. Cleanup temp files
