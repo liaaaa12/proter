@@ -18,5 +18,5 @@ return [
 
     'log_channel' => 'voice_verification',
 
-    'timeout' => 30, // seconds
+    'timeout' => env('VOICE_TIMEOUT', 60), // seconds
 ];
