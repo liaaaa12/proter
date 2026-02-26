@@ -81,13 +81,28 @@ class VoiceTransactionController extends Controller
 
             DB::commit();
 
+            // Return JSON for AJAX (global voice command), redirect for Inertia form
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transaksi berhasil disimpan',
+                    'transaction_id' => $transactionId
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Transaksi berhasil disimpan');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+            }
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error saving voice transaction: ' . $e->getMessage());
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage());
         }
     }
