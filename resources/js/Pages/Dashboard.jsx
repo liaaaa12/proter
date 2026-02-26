@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import React from 'react';
+import { Head, router } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion } from 'framer-motion';
 import { 
@@ -7,17 +7,11 @@ import {
     TrendingUp, 
     TrendingDown, 
     Target, 
-    Mic, 
     ChevronRight,
     ArrowUpRight,
     ArrowDownLeft,
-    Plus,
-    MoreHorizontal
+    Plus
 } from 'lucide-react';
-import VoiceVisualizer from '../Components/VoiceVisualizer';
-import TransactionModal from '../Components/TransactionModal';
-import { useVoiceRecording } from '../Hooks/useVoiceRecording';
-import axios from 'axios';
 
 const StatCard = ({ title, amount, icon: Icon, color, trend }) => (
     <motion.div 
@@ -55,41 +49,7 @@ const StatCard = ({ title, amount, icon: Icon, color, trend }) => (
     </motion.div>
 );
 
-export default function Dashboard({ stats, analysis, goal, goalPercentage, recentTransactions, budgets, goals }) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [transactionData, setTransactionData] = useState({
-        jenis: 'Pengeluaran',
-        kategori: 'Lainnya',
-        jumlah: 0,
-        keterangan: '',
-        budget_id: null,
-        goal_id: null
-    });
-
-    const handleVoiceResult = async (text) => {
-        try {
-            const response = await axios.post('/api/parse-voice-text', { text });
-            if (response.data.success) {
-                setTransactionData(response.data.data);
-                setIsModalOpen(true);
-            }
-        } catch (error) {
-            console.error('Failed to parse voice:', error);
-        }
-    };
-
-    const { isRecording, toggleRecording } = useVoiceRecording({
-        onResult: handleVoiceResult
-    });
-
-    const handleSubmitTransaction = (e) => {
-        e.preventDefault();
-        router.post('/api/voice-transaction', transactionData, {
-            onSuccess: () => {
-                setIsModalOpen(false);
-            }
-        });
-    };
+export default function Dashboard({ stats, analysis, goal, goalPercentage, recentTransactions }) {
 
     return (
         <AuthLayout>
@@ -106,41 +66,7 @@ export default function Dashboard({ stats, analysis, goal, goalPercentage, recen
                         <h1 className="text-5xl font-bold font-outfit mb-3 tracking-tighter text-slate-900">Dashboard</h1>
                         <p className="text-slate-500 font-medium">Selamat datang kembali! Mari kendalikan finansial Anda hari ini.</p>
                     </div>
-                    
-                    <motion.button 
-                        onClick={toggleRecording}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`group relative h-16 px-10 rounded-2xl flex items-center gap-4 text-white font-bold transition-all shadow-2xl overflow-hidden ${
-                            isRecording 
-                            ? 'bg-rose-500 shadow-rose-500/40' 
-                            : 'bg-teal-600 shadow-teal-600/30'
-                        }`}
-                    >
-                        {/* Shimmer Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                        
-                        <Mic size={22} className={isRecording ? 'animate-bounce' : 'group-hover:scale-110 transition-transform'} />
-                        <span className="relative z-10">{isRecording ? 'Mendengarkan...' : 'Command Suara'}</span>
-                        
-                        {isRecording && (
-                            <div className="absolute inset-0 opacity-20">
-                                <VoiceVisualizer isActive={true} color="#ffffff" />
-                            </div>
-                        )}
-                    </motion.button>
                 </motion.div>
-
-                {/* Modal */}
-                <TransactionModal 
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    data={transactionData}
-                    setData={setTransactionData}
-                    onSubmit={handleSubmitTransaction}
-                    budgets={budgets}
-                    goals={goals}
-                />
 
                 {/* Stats Grid */}
                 <motion.div 

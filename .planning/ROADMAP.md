@@ -21,6 +21,13 @@
 - **Goal**: REQ-008
 - **Deliverable**: Expanded test suite, developer README, final performance audit report.
 
+## Phase 4: Real-World Accuracy Evaluation
+
+**Goal**: Evaluate and calibrate the voice verification system's accuracy across diverse real-world conditions.
+
+- **Goal**: Threshold calibration, False Acceptance/Rejection analysis, microphone diversity testing
+- **Deliverable**: Evaluation report, optimized thresholds, optional preprocessing improvements
+
 ---
 
 ## Definition of Done (Milestone)
@@ -29,3 +36,4 @@
 - [ ] No regression in voice verification accuracy.
 - [ ] Code passes PSR-12 and basic Python linting.
 - [ ] Integration tests pass for the Python/Laravel bridge.
+- [ ] Real-world accuracy metrics documented (FAR/FRR).
