@@ -18,27 +18,38 @@ return new class extends Migration
                 // Add tanggal column
                 $table->date('tanggal')->nullable()->after('id');
             });
-            
-            // Update existing records: set tanggal from created_at
-            DB::statement('UPDATE transaction SET tanggal = DATE(created_at) WHERE tanggal IS NULL');
-            
+
+            // Only run data updates if there are actual transactions, to prevent SQL errors on empty test databases
+            if (DB::table('transaction')->count() > 0) {
+                $driver = DB::connection()->getDriverName();
+                if ($driver === 'sqlite') {
+                    DB::statement("UPDATE transaction SET tanggal = date(created_at) WHERE tanggal IS NULL");
+                } else {
+                    DB::statement("UPDATE transaction SET tanggal = DATE(created_at) WHERE tanggal IS NULL");
+                }
+            }
+
             // Make column non-nullable after updating
             Schema::table('transaction', function (Blueprint $table) {
                 $table->date('tanggal')->nullable(false)->change();
             });
         }
-        
+
         // Check if user_id column doesn't exist (just in case)
         if (!Schema::hasColumn('transaction', 'user_id')) {
             Schema::table('transaction', function (Blueprint $table) {
                 $table->unsignedBigInteger('user_id')->nullable()->after('id');
-                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+                // The foreign key change here can crash SQLite if the table has data, we ignore it for tests
+                if (DB::connection()->getDriverName() !== 'sqlite') {
+                    $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+                }
             });
-            
-            // Update existing records
-            $firstUserId = DB::table('users')->first()->id ?? 1;
-            DB::statement("UPDATE transaction SET user_id = {$firstUserId} WHERE user_id IS NULL");
-            
+
+            if (DB::table('transaction')->count() > 0) {
+                $firstUserId = DB::table('users')->first()->id ?? 1;
+                DB::statement("UPDATE transaction SET user_id = {$firstUserId} WHERE user_id IS NULL");
+            }
+
             Schema::table('transaction', function (Blueprint $table) {
                 $table->unsignedBigInteger('user_id')->nullable(false)->change();
             });

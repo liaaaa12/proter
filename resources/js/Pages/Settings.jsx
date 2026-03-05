@@ -1,49 +1,19 @@
 import React, { useState, useRef } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Settings as SettingsIcon, 
-    User, 
-    Lock, 
     ShieldCheck, 
     Bell, 
-    ChevronRight,
     Camera,
     Save,
-    Phone,
-    Mail,
     CheckCircle2,
     Mic,
-    Image as ImageIcon,
     LogOut
 } from 'lucide-react';
-import { Link } from '@inertiajs/react';
 
-const SettingsSection = ({ title, description, children, icon: Icon }) => (
-    <motion.div 
-        variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 }
-        }}
-        className="bg-white/40 backdrop-blur-xl rounded-[48px] border border-white/40 shadow-sm overflow-hidden mb-10"
-    >
-        <div className="p-10 border-b border-white/40 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-                <div className="w-14 h-14 bg-teal-500/10 rounded-2xl flex items-center justify-center text-teal-600 shadow-inner">
-                    <Icon size={28} />
-                </div>
-                <div>
-                    <h4 className="text-xl font-bold text-slate-900 tracking-tight">{title}</h4>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">{description}</p>
-                </div>
-            </div>
-        </div>
-        <div className="p-10">
-            {children}
-        </div>
-    </motion.div>
-);
+import ProfileForm from '../Components/Settings/ProfileForm';
+import PasswordForm from '../Components/Settings/PasswordForm';
 
 export default function Settings({ user }) {
     const fileInputRef = useRef(null);
@@ -181,118 +151,10 @@ export default function Settings({ user }) {
                         className="space-y-10"
                     >
                     {/* General Settings */}
-                    <SettingsSection 
-                        title="Informasi Profil" 
-                        description="Perbarui informasi identitas publik Anda."
-                        icon={User}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-3 lg:col-span-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
-                                <div className="relative">
-                                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                    <input 
-                                        type="text"
-                                        value={data.name}
-                                        onChange={e => setData('name', e.target.value)}
-                                        className="w-full h-14 pl-14 pr-6 bg-white border-0 rounded-2xl shadow-inner focus:ring-2 focus:ring-teal-500 font-bold text-slate-900"
-                                        placeholder="Masukkan nama lengkap"
-                                        required
-                                    />
-                                </div>
-                                {errors.name && <p className="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase tracking-widest">{errors.name}</p>}
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Alamat Email</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                    <input 
-                                        type="email"
-                                        value={data.email}
-                                        onChange={e => setData('email', e.target.value)}
-                                        className="w-full h-14 pl-14 pr-6 bg-white border-0 rounded-2xl shadow-inner focus:ring-2 focus:ring-teal-500 font-bold text-slate-900"
-                                        placeholder="example@email.com"
-                                    />
-                                </div>
-                                {errors.email && <p className="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase tracking-widest">{errors.email}</p>}
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nomor Telepon</label>
-                                <div className="relative">
-                                    <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                    <input 
-                                        type="tel"
-                                        value={data.phone}
-                                        onChange={e => setData('phone', e.target.value)}
-                                        className="w-full h-14 pl-14 pr-6 bg-white border-0 rounded-2xl shadow-inner focus:ring-2 focus:ring-teal-500 font-bold text-slate-900"
-                                        placeholder="08xxxxxxxxxx"
-                                        required
-                                    />
-                                </div>
-                                {errors.phone && <p className="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase tracking-widest">{errors.phone}</p>}
-                            </div>
-                        </div>
-                    </SettingsSection>
+                    <ProfileForm data={data} setData={setData} errors={errors} />
 
                     {/* Security Settings */}
-                    <SettingsSection 
-                        title="Autentikasi & Keamanan" 
-                        description="Proteksi akun dengan enkripsi kata sandi."
-                        icon={Lock}
-                    >
-                        <div className="space-y-8">
-                            <motion.div 
-                                whileHover={{ scale: 1.01 }}
-                                className="bg-slate-900 border border-white/5 rounded-[32px] p-6 flex gap-6 items-start shadow-2xl"
-                            >
-                                <div className="w-12 h-12 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 flex-shrink-0 shadow-lg relative overflow-hidden group">
-                                    <div className="absolute inset-0 bg-teal-500/10 animate-pulse" />
-                                    <Mic size={24} className="relative z-10" />
-                                </div>
-                                <div>
-                                    <h5 className="text-sm font-black text-white uppercase tracking-widest mb-2">Voice-Lock Active</h5>
-                                    <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                                        Perubahan pada keamanan akan memerlukan verifikasi suara tambahan jika Anda mengaktifkan perlindungan ketat dari dashboard.
-                                    </p>
-                                </div>
-                            </motion.div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kata Sandi Saat Ini</label>
-                                <input 
-                                    type="password"
-                                    value={data.current_password}
-                                    onChange={e => setData('current_password', e.target.value)}
-                                    className="w-full h-14 px-6 bg-white border-0 rounded-2xl shadow-inner focus:ring-2 focus:ring-teal-500 font-bold text-slate-900"
-                                    placeholder="Wajib diisi untuk proses pembaruan"
-                                />
-                                {errors.current_password && <p className="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase tracking-widest">{errors.current_password}</p>}
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kata Sandi Baru</label>
-                                    <input 
-                                        type="password"
-                                        value={data.password}
-                                        onChange={e => setData('password', e.target.value)}
-                                        className="w-full h-14 px-6 bg-white border-0 rounded-2xl shadow-inner focus:ring-2 focus:ring-teal-500 font-bold text-slate-900"
-                                        placeholder="Minimal 8 karakter"
-                                    />
-                                    {errors.password && <p className="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase tracking-widest">{errors.password}</p>}
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Konfirmasi Sandi Baru</label>
-                                    <input 
-                                        type="password"
-                                        value={data.password_confirmation}
-                                        onChange={e => setData('password_confirmation', e.target.value)}
-                                        className="w-full h-14 px-6 bg-white border-0 rounded-2xl shadow-inner focus:ring-2 focus:ring-teal-500 font-bold text-slate-900"
-                                        placeholder="Ulangi sandi baru"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </SettingsSection>
+                    <PasswordForm data={data} setData={setData} errors={errors} />
 
                     {/* Save Changes Floating Bar */}
                     <motion.div 

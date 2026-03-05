@@ -3,7 +3,6 @@ import { Head, router } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    BarChart3, 
     Download, 
     Filter, 
     Search, 
@@ -14,21 +13,8 @@ import {
     ChevronDown,
     FileText
 } from 'lucide-react';
-import { 
-    BarChart, 
-    Bar, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
-    Legend, 
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-    AreaChart,
-    Area
-} from 'recharts';
+import TrendChart from '../Components/Laporan/TrendChart';
+import CategoryChart from '../Components/Laporan/CategoryChart';
 
 const SummaryCard = ({ title, amount, icon: Icon, color }) => (
     <motion.div 
@@ -212,124 +198,10 @@ export default function Laporan({ years }) {
                 {/* Chart Area */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-12">
                     {/* Trend Chart */}
-                    <motion.div 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="lg:col-span-2 bg-white/40 backdrop-blur-xl p-10 rounded-[48px] border border-white/40 shadow-sm"
-                    >
-                        <div className="flex items-center justify-between mb-10">
-                            <div>
-                                <h4 className="text-2xl font-bold font-outfit text-slate-900 tracking-tight">Financial Trends</h4>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Visualisasi arus kas harian</p>
-                            </div>
-                            <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center text-teal-600">
-                                <BarChart3 size={24} />
-                            </div>
-                        </div>
-                        <div className="h-[350px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis 
-                                        dataKey="date" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{fill: '#94a3b8', fontSize: 10, fontWeight: '700'}}
-                                        tickFormatter={(str) => {
-                                            const d = new Date(str);
-                                            return `${d.getDate()}/${d.getMonth()+1}`;
-                                        }}
-                                    />
-                                    <YAxis 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{fill: '#94a3b8', fontSize: 10, fontWeight: '700'}}
-                                        tickFormatter={(val) => `Rp ${val/1000}k`}
-                                    />
-                                    <Tooltip 
-                                        cursor={{fill: 'rgba(20, 184, 166, 0.05)'}}
-                                        contentStyle={{ 
-                                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                            backdropFilter: 'blur(10px)',
-                                            borderRadius: '24px', 
-                                            border: '1px solid rgba(255,255,255,0.4)', 
-                                            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)' 
-                                        }}
-                                        formatter={(val) => `Rp ${new Intl.NumberFormat('id-ID').format(val)}`}
-                                    />
-                                    <Legend iconType="circle" />
-                                    <Bar dataKey="pemasukan" name="Pemasukan" fill="#0d9488" radius={[6, 6, 0, 0]} />
-                                    <Bar dataKey="pengeluaran" name="Pengeluaran" fill="#f43f5e" radius={[6, 6, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </motion.div>
+                    <TrendChart chartData={chartData} />
 
                     {/* Distribution Chart */}
-                    <motion.div 
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="bg-slate-900 border border-white/5 p-10 rounded-[48px] text-white shadow-3xl overflow-hidden relative"
-                    >
-                        <motion.div 
-                            animate={{ opacity: [0.1, 0.2, 0.1] }}
-                            transition={{ duration: 10, repeat: Infinity }}
-                            className="absolute -top-20 -right-20 w-64 h-64 bg-indigo-500/20 rounded-full blur-[100px]" 
-                        />
-                        
-                        <div className="flex items-center justify-between mb-10 relative z-10">
-                            <div>
-                                <h4 className="text-xl font-bold font-outfit text-white tracking-tight">Allocation</h4>
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mt-2">Distribusi Per Kategori</p>
-                            </div>
-                        </div>
-                        <div className="h-[250px] w-full relative z-10">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={categoryData}
-                                        innerRadius={70}
-                                        outerRadius={95}
-                                        paddingAngle={8}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {categoryData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip 
-                                        contentStyle={{ 
-                                            backgroundColor: '#0f172a',
-                                            borderRadius: '20px', 
-                                            border: '1px solid rgba(255,255,255,0.1)', 
-                                            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-                                            color: '#fff' 
-                                        }}
-                                        itemStyle={{ color: '#fff' }}
-                                        formatter={(val) => `Rp ${new Intl.NumberFormat('id-ID').format(val)}`}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="mt-8 space-y-4 relative z-10">
-                            {categoryData.length > 0 ? categoryData.slice(0, 4).map((item, index) => (
-                                <div key={index} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">{item.name}</span>
-                                    </div>
-                                    <span className="font-outfit font-bold text-teal-400">
-                                        {((item.value / summary.total_pengeluaran) * 100).toFixed(1)}%
-                                    </span>
-                                </div>
-                            )) : (
-                                <p className="text-center text-slate-500 text-[10px] font-black uppercase tracking-widest py-10">No data available</p>
-                            )}
-                        </div>
-                    </motion.div>
+                    <CategoryChart categoryData={categoryData} totalPengeluaran={summary.total_pengeluaran} />
                 </div>
 
                 {/* Summary Grid */}
