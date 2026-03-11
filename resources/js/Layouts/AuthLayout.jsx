@@ -220,7 +220,7 @@ export default function AuthLayout({ children }) {
             {/* ── Desktop Sidebar ─────────────────────────────────── */}
             <aside className="w-72 bg-white/70 backdrop-blur-xl border-r border-white/20 hidden lg:flex flex-col p-6 sticky top-0 h-screen z-50">
                 <Link href="/dashboard" className="flex items-center justify-center mb-12">
-                    <img src="/images/voica-logo.png" alt="Voica" className="h-16 w-auto" />
+                    <img src="/images/voica-logo.png" alt="Voica" className="w-40 h-auto" />
                 </Link>
 
                 <nav className="flex-1 space-y-2">
@@ -283,7 +283,7 @@ export default function AuthLayout({ children }) {
                 {/* Mobile Header */}
                 <header className="lg:hidden h-20 bg-white/80 backdrop-blur-md border-b border-white/20 flex items-center justify-between px-6 sticky top-0 z-40">
                     <Link href="/dashboard" className="flex items-center">
-                        <img src="/images/voica-logo.png" alt="Voica" className="h-14 w-auto" />
+                        <img src="/images/voica-logo.png" alt="Voica" className="w-36 h-auto" />
                     </Link>
                     <Link href="/settings" className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold uppercase overflow-hidden text-xs hover:ring-2 hover:ring-teal-500 transition-all">
                         {auth.user.avatar_url ? (
