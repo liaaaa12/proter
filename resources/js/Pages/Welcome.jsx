@@ -35,9 +35,9 @@ export default function Welcome({ auth }) {
 
             {/* Navigasi Sederhana */}
             <nav className="fixed top-0 w-full z-50 bg-white border-b border-slate-200">
-                <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center">
-                        <img src="/images/voica-logo.png" alt="Voica" className="h-12 w-auto" />
+                        <img src="/images/voica-logo.png" alt="Voica" className="w-36 h-auto" />
                     </Link>
 
                     <div className="flex items-center gap-6">
@@ -60,7 +60,7 @@ export default function Welcome({ auth }) {
             </nav>
 
             {/* Bagian Utama (Hero) */}
-            <header className="pt-40 pb-20 px-6">
+            <header className="pt-32 pb-20 px-6">
                 <div className="max-w-4xl mx-auto text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
