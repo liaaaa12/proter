@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Phone, Lock, User as UserIcon, ArrowRight, X, CheckCircle2, AlertCircle, Volume2 } from 'lucide-react';
+import { MicrophoneIcon as Mic, PhoneIcon as Phone, LockClosedIcon as Lock, UserIcon, ArrowRightIcon as ArrowRight, XMarkIcon as X, CheckCircleIcon as CheckCircle2, ExclamationCircleIcon as AlertCircle, SpeakerWaveIcon as Volume2 } from '@heroicons/react/24/solid';
 import VoiceVisualizer from '../Components/VoiceVisualizer';
 import { useAudioRecorder } from '../Hooks/useAudioRecorder';
 
@@ -81,7 +81,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                     {isRecording ? 'Merekam frekuensi...' : 'Sistem Siap'}
                                 </span>
                             </div>
-                            {data.voice_audio_base64 && <CheckCircle2 className="text-teal-400" size={18} />}
+                            {data.voice_audio_base64 && <CheckCircle2 className="w-[18px] h-[18px] text-teal-400" />}
                         </div>
                         
                         <div className="h-24 flex items-center justify-center bg-black/20 rounded-2xl overflow-hidden mb-6">
@@ -96,7 +96,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                     className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold transition-all border border-white/10 group"
                                 >
                                     <span className="flex items-center gap-2">
-                                        <Mic size={16} className="text-teal-400 group-hover:scale-110 transition-transform" />
+                                        <Mic className="w-4 h-4 text-teal-400 group-hover:scale-110 transition-transform" />
                                         {data.voice_audio_base64 ? 'Rekam Ulang' : 'Mulai Perekaman'}
                                     </span>
                                 </button>
@@ -116,7 +116,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                     className="p-3 bg-teal-500/20 hover:bg-teal-500/30 rounded-full transition-all border border-teal-400/20"
                                     title="Dengarkan rekaman"
                                 >
-                                    <Volume2 size={16} className="text-teal-400" />
+                                    <Volume2 className="w-4 h-4 text-teal-400" />
                                 </button>
                             )}
                         </div>
@@ -160,7 +160,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                         (flash?.error || errors.error) ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-teal-50 border-teal-100 text-teal-700'
                                     }`}
                                 >
-                                    {(flash?.error || errors.error) ? <AlertCircle size={18} className="shrink-0" /> : <CheckCircle2 size={18} className="shrink-0" />}
+                                    {(flash?.error || errors.error) ? <AlertCircle className="w-[18px] h-[18px] shrink-0" /> : <CheckCircle2 className="w-[18px] h-[18px] shrink-0" />}
                                     <span className="text-sm font-bold leading-tight">
                                         {status || flash?.success || flash?.error || errors.error}
                                     </span>
@@ -191,7 +191,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Nama Lengkap</label>
                                     <div className="relative">
-                                        <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <UserIcon className="w-[18px] h-[18px] absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input 
                                             type="text"
                                             value={data.name}
@@ -208,7 +208,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                             <div className="space-y-2">
                                 <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Nomor Telepon</label>
                                 <div className="relative">
-                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <Phone className="w-[18px] h-[18px] absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input 
                                         type="tel"
                                         value={data.phone}
@@ -225,7 +225,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Kata Sandi</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <Lock className="w-[18px] h-[18px] absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input 
                                             type="password"
                                             value={data.password}
@@ -243,7 +243,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Konfirmasi Kata Sandi</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <Lock className="w-[18px] h-[18px] absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input 
                                             type="password"
                                             value={data.password_confirmation}
@@ -261,8 +261,8 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                 <div className={`p-4 rounded-2xl text-xs font-medium border ${data.voice_audio_base64 ? 'bg-teal-50 border-teal-100 text-teal-700' : (errors.voice_audio ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-slate-50 border-slate-200 text-slate-500')}`}>
                                     <p className="flex items-center gap-2">
                                         {data.voice_audio_base64 
-                                            ? <CheckCircle2 size={14} /> 
-                                            : (errors.voice_audio ? <AlertCircle size={14} /> : <Mic size={14} />)}
+                                            ? <CheckCircle2 className="w-3.5 h-3.5" /> 
+                                            : (errors.voice_audio ? <AlertCircle className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />)}
                                         {errors.voice_audio 
                                             ? errors.voice_audio 
                                             : (data.voice_audio_base64 
@@ -278,7 +278,7 @@ export default function Auth({ mode = 'login', status: propStatus }) {
                                 className="w-full h-14 !mt-10 bg-teal-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {processing ? 'Memproses...' : (authMode === 'login' ? 'Masuk Sekarang' : 'Daftar Akun')}
-                                <ArrowRight size={20} />
+                                <ArrowRight className="w-5 h-5" />
                             </button>
                         </form>
 

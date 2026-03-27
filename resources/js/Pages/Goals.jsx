@@ -3,14 +3,14 @@ import { Head, useForm, router } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Target, 
-    Plus, 
-    Calendar, 
-    TrendingUp, 
-    ChevronRight, 
-    Trophy,
-    MoreHorizontal
-} from 'lucide-react';
+    FlagIcon as Target, 
+    PlusIcon as Plus, 
+    CalendarIcon as Calendar, 
+    ArrowTrendingUpIcon as TrendingUp, 
+    ChevronRightIcon as ChevronRight, 
+    TrophyIcon as Trophy,
+    EllipsisHorizontalIcon as MoreHorizontal
+} from '@heroicons/react/24/solid';
 import GoalForm from '../Components/Goals/GoalForm';
 
 const GoalCard = ({ goal }) => {
@@ -40,18 +40,18 @@ const GoalCard = ({ goal }) => {
                         animate={{ scale: 1 }}
                         className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-teal-500/40"
                     >
-                        <Trophy size={24} />
+                        <Trophy className="w-6 h-6" />
                     </motion.div>
                 </div>
             )}
 
             <div className="mb-10 relative z-10">
                 <div className="w-16 h-16 bg-white shadow-inner rounded-[24px] flex items-center justify-center text-slate-400 group-hover:scale-110 group-hover:rotate-6 group-hover:text-teal-600 transition-all duration-500 mb-8">
-                    <Target size={32} />
+                    <Target className="w-8 h-8" />
                 </div>
                 <h4 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">{goal.namaGoal}</h4>
                 <div className="flex items-center gap-2 text-slate-400">
-                    <Calendar size={14} />
+                    <Calendar className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Target: {new Date(goal.tanggalTarget).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
                 </div>
             </div>
@@ -119,7 +119,7 @@ export default function Goals({ goals, allBudgets }) {
                         className="h-16 px-10 bg-teal-600 text-white rounded-2xl flex items-center justify-center gap-3 font-bold shadow-2xl shadow-teal-600/30 hover:bg-teal-700 transition-all group overflow-hidden relative"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                        <Plus size={22} className="relative z-10" />
+                        <Plus className="w-[22px] h-[22px] relative z-10" />
                         <span className="relative z-10">Buat Target Baru</span>
                     </motion.button>
                 </motion.div>
@@ -183,7 +183,7 @@ export default function Goals({ goals, allBudgets }) {
                 ) : (
                     <div className="bg-white rounded-[40px] p-24 text-center border-2 border-dashed border-slate-200">
                         <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-8">
-                            <Target className="text-slate-200" size={48} />
+                            <Target className="w-12 h-12 text-slate-200" />
                         </div>
                         <h3 className="text-2xl font-bold text-slate-900 mb-3">Mulai Target Pertama Anda</h3>
                         <p className="text-slate-500 max-w-sm mx-auto mb-10 leading-relaxed">Punya impian membeli rumah, kendaraan, atau sekadar tabungan darurat? Catat targetnya di sini.</p>

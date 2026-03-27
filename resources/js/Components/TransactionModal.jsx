@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Wallet, Tag, Info } from 'lucide-react';
+import { XMarkIcon as X, CheckIcon as Save, WalletIcon as Wallet, TagIcon as Tag, InformationCircleIcon as Info } from '@heroicons/react/24/solid';
 
 export default function TransactionModal({ 
     isOpen, 
@@ -28,7 +28,7 @@ export default function TransactionModal({
                             <p className="text-slate-400 font-medium text-sm">Periksa kembali data dari suara Anda.</p>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                            <X size={24} />
+                            <X className="w-6 h-6" />
                         </button>
                     </div>
 
@@ -119,7 +119,7 @@ export default function TransactionModal({
                                 type="submit"
                                 className="w-full h-16 bg-teal-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/20"
                             >
-                                <Save size={20} />
+                                <Save className="w-5 h-5" />
                                 Simpan Transaksi
                             </button>
                         </div>

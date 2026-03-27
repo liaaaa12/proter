@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save } from 'lucide-react';
+import { XMarkIcon as X, CheckIcon as Save } from '@heroicons/react/24/solid';
 
 export default function BudgetForm({ isFormOpen, setIsFormOpen, periode }) {
     const { data, setData, post, processing, reset, errors } = useForm({
@@ -47,7 +47,7 @@ export default function BudgetForm({ isFormOpen, setIsFormOpen, periode }) {
                         <div className="flex items-center justify-between mb-10">
                             <h2 className="text-3xl font-bold font-outfit">Tambah Budget</h2>
                             <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                                <X size={24} />
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
 
@@ -101,7 +101,7 @@ export default function BudgetForm({ isFormOpen, setIsFormOpen, periode }) {
                                     disabled={processing}
                                     className="w-full h-16 bg-teal-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/20"
                                 >
-                                    <Save size={22} />
+                                    <Save className="w-[22px] h-[22px]" />
                                     Simpan Anggaran
                                 </button>
                             </div>

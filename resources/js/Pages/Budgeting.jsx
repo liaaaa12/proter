@@ -3,15 +3,15 @@ import { Head, router, useForm } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Wallet, 
-    Plus, 
-    Calendar, 
-    ChevronRight, 
-    MoreHorizontal, 
-    ArrowUpCircle,
-    ArrowDownCircle,
-    PiggyBank
-} from 'lucide-react';
+    WalletIcon as Wallet, 
+    PlusIcon as Plus, 
+    CalendarIcon as Calendar, 
+    ChevronRightIcon as ChevronRight, 
+    EllipsisHorizontalIcon as MoreHorizontal, 
+    ArrowUpCircleIcon as ArrowUpCircle,
+    ArrowDownCircleIcon as ArrowDownCircle,
+    BanknotesIcon as PiggyBank
+} from '@heroicons/react/24/solid';
 import BudgetForm from '../Components/Budgeting/BudgetForm';
 
 const BudgetCard = ({ budget }) => {
@@ -45,7 +45,7 @@ const BudgetCard = ({ budget }) => {
                     </div>
                 </div>
                 <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all">
-                    <MoreHorizontal size={20} />
+                    <MoreHorizontal className="w-5 h-5" />
                 </button>
             </div>
 
@@ -108,7 +108,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
 
                     <div className="flex items-center gap-4">
                         <div className="bg-white/40 backdrop-blur-md border border-white/40 px-5 py-3 rounded-2xl flex items-center gap-3 shadow-sm group hover:border-teal-500/30 transition-all">
-                            <Calendar size={18} className="text-teal-600 group-hover:scale-110 transition-transform" />
+                            <Calendar className="w-[18px] h-[18px] text-teal-600 group-hover:scale-110 transition-transform" />
                             <input 
                                 type="month" 
                                 value={periode}
@@ -122,7 +122,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                             onClick={() => setIsFormOpen(true)}
                             className="h-14 px-8 bg-teal-600 text-white rounded-2xl flex items-center justify-center gap-3 font-bold shadow-xl shadow-teal-600/30 hover:bg-teal-700 transition-all"
                         >
-                            <Plus size={20} />
+                            <Plus className="w-5 h-5" />
                             <span>Buat Budget</span>
                         </motion.button>
                     </div>
@@ -142,7 +142,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                             className="absolute -right-4 -top-4 w-32 h-32 bg-teal-500 rounded-full blur-3xl" 
                         />
                         <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md relative z-10 group-hover:scale-110 transition-transform shadow-inner">
-                            <Wallet size={32} className="text-teal-400" />
+                            <Wallet className="w-8 h-8 text-teal-400" />
                         </div>
                         <div className="relative z-10">
                             <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total Alokasi</p>
@@ -154,7 +154,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                     </div>
                     <div className="bg-white/40 backdrop-blur-xl p-7 rounded-[40px] border border-white/40 shadow-sm flex items-center gap-6 group">
                         <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform shadow-inner">
-                            <ArrowDownCircle size={32} />
+                            <ArrowDownCircle className="w-8 h-8" />
                         </div>
                         <div>
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Total Terpakai</p>
@@ -166,7 +166,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                     </div>
                     <div className="bg-white/40 backdrop-blur-xl p-7 rounded-[40px] border border-white/40 shadow-sm flex items-center gap-6 group">
                         <div className="w-16 h-16 bg-teal-500/10 rounded-2xl flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform shadow-inner">
-                            <PiggyBank size={32} />
+                            <PiggyBank className="w-8 h-8" />
                         </div>
                         <div>
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Sisa Anggaran</p>
@@ -199,7 +199,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                 ) : (
                     <div className="bg-white rounded-[40px] p-20 text-center border-2 border-dashed border-slate-200">
                         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Wallet className="text-slate-200" size={40} />
+                            <Wallet className="w-10 h-10 text-slate-200" />
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Belum Ada Anggaran</h3>
                         <p className="text-slate-500 max-w-sm mx-auto mb-8">Anda belum memiliki rencana pengeluaran untuk periode ini. Mulai kelola uang Anda sekarang.</p>

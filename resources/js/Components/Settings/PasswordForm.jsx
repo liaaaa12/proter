@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Mic } from 'lucide-react';
+import { LockClosedIcon as Lock, MicrophoneIcon as Mic } from '@heroicons/react/24/solid';
 import SettingsSection from './SettingsSection';
 
 export default function PasswordForm({ data, setData, errors }) {
@@ -17,7 +17,7 @@ export default function PasswordForm({ data, setData, errors }) {
                 >
                     <div className="w-12 h-12 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 flex-shrink-0 shadow-lg relative overflow-hidden group">
                         <div className="absolute inset-0 bg-teal-500/10 animate-pulse" />
-                        <Mic size={24} className="relative z-10" />
+                        <Mic className="w-6 h-6 relative z-10" />
                     </div>
                     <div>
                         <h5 className="text-sm font-black text-white uppercase tracking-widest mb-2">Voice-Lock Active</h5>

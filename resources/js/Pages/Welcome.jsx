@@ -2,13 +2,13 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { 
-    Mic, 
-    CheckCircle2, 
-    ArrowRight, 
-    ShieldCheck, 
-    Smile,
-    UserCircle2
-} from 'lucide-react';
+    MicrophoneIcon as Mic, 
+    CheckCircleIcon as CheckCircle2, 
+    ArrowRightIcon as ArrowRight, 
+    ShieldCheckIcon as ShieldCheck, 
+    FaceSmileIcon as Smile,
+    UserCircleIcon as UserCircle2
+} from '@heroicons/react/24/solid';
 
 export default function Welcome({ auth }) {
     const steps = [
@@ -78,7 +78,7 @@ export default function Welcome({ auth }) {
 
                         <Link href="/register" className="inline-flex items-center gap-4 px-12 py-6 bg-slate-900 text-white rounded-3xl text-2xl font-black shadow-2xl hover:scale-105 transition-all group">
                             Mulai Sekarang - Gratis!
-                            <ArrowRight size={32} className="group-hover:translate-x-2 transition-transform" />
+                            <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
                         </Link>
                     </motion.div>
 
@@ -89,7 +89,7 @@ export default function Welcome({ auth }) {
                         transition={{ delay: 0.3, type: "spring" }}
                         className="mt-20 w-32 h-32 md:w-48 md:h-48 bg-teal-500 rounded-full mx-auto flex items-center justify-center text-white shadow-2xl shadow-teal-500/20"
                     >
-                        <Mic size={64} className="md:size-96" />
+                        <Mic className="w-16 h-16 md:w-24 md:h-24" />
                     </motion.div>
                 </div>
             </header>
@@ -109,7 +109,7 @@ export default function Welcome({ auth }) {
                                 className="p-8 rounded-[40px] bg-slate-50 border border-slate-100"
                             >
                                 <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
-                                    <step.icon size={32} />
+                                    <step.icon className="w-8 h-8" />
                                 </div>
                                 <h3 className="text-2xl font-black mb-4">{step.title}</h3>
                                 <p className="text-xl text-slate-500 leading-relaxed font-medium">
@@ -125,7 +125,7 @@ export default function Welcome({ auth }) {
             <section className="py-20 px-6">
                 <div className="max-w-4xl mx-auto text-center">
                     <div className="inline-flex items-center gap-3 px-6 py-2 bg-teal-50 text-teal-700 rounded-full mb-8 font-bold">
-                        <ShieldCheck size={20} />
+                        <ShieldCheck className="w-5 h-5" />
                         Keamanan Terjamin
                     </div>
                     <h2 className="text-4xl font-black mb-6">Aman & Terpercaya</h2>
