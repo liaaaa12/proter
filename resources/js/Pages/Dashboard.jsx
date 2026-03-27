@@ -3,15 +3,15 @@ import { Head, router } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion } from 'framer-motion';
 import { 
-    Wallet, 
-    TrendingUp, 
-    TrendingDown, 
-    Target, 
-    ChevronRight,
-    ArrowUpRight,
-    ArrowDownLeft,
-    Plus
-} from 'lucide-react';
+    WalletIcon as Wallet, 
+    ArrowTrendingUpIcon as TrendingUp, 
+    ArrowTrendingDownIcon as TrendingDown, 
+    TrophyIcon as Target, 
+    ChevronRightIcon as ChevronRight,
+    ArrowUpRightIcon as ArrowUpRight,
+    ArrowDownLeftIcon as ArrowDownLeft,
+    PlusIcon as Plus
+} from '@heroicons/react/24/solid';
 
 const StatCard = ({ title, amount, icon: Icon, color, trend }) => (
     <motion.div 
@@ -31,7 +31,7 @@ const StatCard = ({ title, amount, icon: Icon, color, trend }) => (
         
         <div className="flex items-center justify-between mb-6 relative z-10">
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ${color.bg} ${color.text}`}>
-                <Icon size={24} />
+                <Icon className="w-6 h-6" />
             </div>
             {trend !== 0 && trend !== undefined && trend !== null ? (
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-md border ${trend > 0 ? 'bg-teal-500/10 border-teal-500/20 text-teal-600' : 'bg-rose-500/10 border-rose-500/20 text-rose-600'}`}>
@@ -112,7 +112,7 @@ export default function Dashboard({ stats, analysis, goal, goalPercentage, recen
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-teal-400">
-                                    <Target size={24} />
+                                    <Target className="w-6 h-6" />
                                 </div>
                                 <span className="text-xs font-bold text-teal-400">{Math.round(goalPercentage)}%</span>
                             </div>
@@ -136,7 +136,7 @@ export default function Dashboard({ stats, analysis, goal, goalPercentage, recen
                             }}
                             className="bg-white/30 backdrop-blur-md border-2 border-dashed border-slate-200 p-7 rounded-[32px] flex flex-col items-center justify-center text-center group cursor-pointer hover:border-teal-600 hover:bg-teal-50/50 transition-all"
                         >
-                            <Plus size={32} className="text-slate-300 group-hover:text-teal-600 mb-2 transition-transform group-hover:rotate-90" />
+                            <Plus className="w-8 h-8 text-slate-300 group-hover:text-teal-600 mb-2 transition-transform group-hover:rotate-90" />
                             <p className="font-bold text-slate-400 group-hover:text-teal-600 uppercase tracking-widest text-[10px]">Tambah Target</p>
                         </motion.div>
                     )}
@@ -176,7 +176,7 @@ export default function Dashboard({ stats, analysis, goal, goalPercentage, recen
                                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-transform group-hover:scale-110 ${
                                             tx.jenis === 'Pemasukan' ? 'bg-teal-500/10 text-teal-600' : 'bg-rose-500/10 text-rose-600'
                                         }`}>
-                                            {tx.jenis === 'Pemasukan' ? <ArrowUpRight size={24} /> : <ArrowDownLeft size={24} />}
+                                            {tx.jenis === 'Pemasukan' ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownLeft className="w-6 h-6" />}
                                         </div>
                                         <div>
                                             <p className="font-bold text-slate-900 text-lg tracking-tight group-hover:text-teal-600 transition-colors">{tx.keterangan}</p>
@@ -226,7 +226,7 @@ export default function Dashboard({ stats, analysis, goal, goalPercentage, recen
                                     onClick={() => router.get('/laporan')}
                                     className="w-full h-16 bg-white text-slate-900 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-teal-50 transition-all shadow-xl shadow-white/5"
                                 >
-                                    Buka Laporan Penuh <ChevronRight size={18} className="text-teal-600" />
+                                    Buka Laporan Penuh <ChevronRight className="w-[18px] h-[18px] text-teal-600" />
                                 </motion.button>
                             </div>
                         </div>

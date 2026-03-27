@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    LayoutDashboard, 
-    Wallet, 
-    Target, 
-    BarChart3, 
-    Settings, 
-    LogOut, 
-    X,
-    Mic,
-    MicOff,
-    CheckCircle2,
-    AlertCircle,
-    Ear,
-    Loader2
-} from 'lucide-react';
+    Squares2X2Icon as LayoutDashboard, 
+    WalletIcon as Wallet, 
+    TrophyIcon as Target, 
+    ChartBarIcon as BarChart3, 
+    Cog6ToothIcon as Settings, 
+    ArrowRightOnRectangleIcon as LogOut,
+    XMarkIcon as X,
+    MicrophoneIcon as Mic,
+    CheckCircleIcon as CheckCircle2,
+    ExclamationCircleIcon as AlertCircle,
+    SignalIcon as Ear,
+    ArrowPathIcon as Loader2
+} from '@heroicons/react/24/solid';
+import { MicrophoneIcon as MicOff } from '@heroicons/react/24/outline';
 import MeshGradient from '../Components/MeshGradient';
 import TransactionModal from '../Components/TransactionModal';
 import { useVoiceCommand } from '../Hooks/useVoiceCommand';
@@ -33,10 +33,10 @@ const Toast = ({ type, message, onClear }) => (
             : 'bg-rose-600/90 border-rose-500 text-white'
         }`}
     >
-        {type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+        {type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
         <span className="font-bold text-sm">{message}</span>
         <button onClick={onClear} className="ml-2 hover:bg-white/10 p-1 rounded-full transition-colors">
-            <X size={16} />
+            <X className="w-4 h-4" />
         </button>
     </motion.div>
 );
@@ -52,16 +52,16 @@ const VoiceFeedback = ({ feedback, transcript, onClear }) => {
     const iconMap = {
         listening: (
             <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}>
-                <Ear size={20} />
+                <Ear className="w-5 h-5" />
             </motion.div>
         ),
         processing: (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                <Loader2 size={20} />
+                <Loader2 className="w-5 h-5" />
             </motion.div>
         ),
-        success: <CheckCircle2 size={20} />,
-        error: <AlertCircle size={20} />,
+        success: <CheckCircle2 className="w-5 h-5" />,
+        error: <AlertCircle className="w-5 h-5" />,
     };
 
     return (
@@ -82,7 +82,7 @@ const VoiceFeedback = ({ feedback, transcript, onClear }) => {
                 )}
             </div>
             <button onClick={onClear} className="ml-2 hover:bg-white/10 p-1 rounded-full transition-colors flex-shrink-0">
-                <X size={16} />
+                <X className="w-4 h-4" />
             </button>
         </motion.div>
     );
@@ -98,7 +98,7 @@ const SidebarItem = ({ href, icon: Icon, label, active }) => (
             : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
         }`}
     >
-        <Icon size={22} />
+        <Icon className="w-[22px] h-[22px]" />
         <span className="font-semibold">{label}</span>
     </Link>
 );
@@ -247,7 +247,7 @@ export default function AuthLayout({ children }) {
                                 animate={isListening ? { scale: [1, 1.15, 1] } : {}}
                                 transition={{ repeat: Infinity, duration: 1 }}
                             >
-                                {isListening ? <MicOff size={22} /> : <Mic size={22} />}
+                                {isListening ? <MicOff className="w-[22px] h-[22px]" /> : <Mic className="w-[22px] h-[22px]" />}
                             </motion.div>
                             {isListening ? 'Mendengarkan...' : isProcessing ? 'Memproses...' : 'Perintah Suara'}
                         </button>
@@ -272,7 +272,7 @@ export default function AuthLayout({ children }) {
                         href="/logout" method="post" as="button"
                         className="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-2xl transition-all font-semibold"
                     >
-                        <LogOut size={22} />
+                        <LogOut className="w-[22px] h-[22px]" />
                         Keluar
                     </Link>
                 </div>
@@ -320,7 +320,7 @@ export default function AuthLayout({ children }) {
                             return (
                                 <Link href={item.href}
                                     className={`flex flex-col items-center gap-1 pt-2 pb-2 min-w-[56px] transition-colors ${active ? 'text-teal-600' : 'text-slate-400'}`}>
-                                    <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+                                    <Icon className={`w-[22px] h-[22px] ${active ? 'stroke-2' : ''}`} />
                                     <span className="text-[10px] font-semibold">{item.label}</span>
                                 </Link>
                             );
@@ -334,7 +334,7 @@ export default function AuthLayout({ children }) {
                             return (
                                 <Link href={item.href}
                                     className={`flex flex-col items-center gap-1 pt-2 pb-2 min-w-[56px] transition-colors ${active ? 'text-teal-600' : 'text-slate-400'}`}>
-                                    <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+                                    <Icon className={`w-[22px] h-[22px] ${active ? 'stroke-2' : ''}`} />
                                     <span className="text-[10px] font-semibold">{item.label}</span>
                                 </Link>
                             );
@@ -366,7 +366,7 @@ export default function AuthLayout({ children }) {
                                         animate={isListening ? { scale: [1, 1.15, 1] } : {}}
                                         transition={{ repeat: Infinity, duration: 0.8 }}
                                     >
-                                        {isProcessing ? <Loader2 size={24} className="animate-spin" /> : isListening ? <MicOff size={24} /> : <Mic size={24} />}
+                                        {isProcessing ? <Loader2 className="w-6 h-6 animate-spin" /> : isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
                                     </motion.div>
                                 </motion.button>
                                 <span className={`text-[10px] font-semibold mt-0.5 ${
@@ -385,7 +385,7 @@ export default function AuthLayout({ children }) {
                             return (
                                 <Link href={item.href}
                                     className={`flex flex-col items-center gap-1 pt-2 pb-2 min-w-[56px] transition-colors ${active ? 'text-teal-600' : 'text-slate-400'}`}>
-                                    <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+                                    <Icon className={`w-[22px] h-[22px] ${active ? 'stroke-2' : ''}`} />
                                     <span className="text-[10px] font-semibold">{item.label}</span>
                                 </Link>
                             );
@@ -399,7 +399,7 @@ export default function AuthLayout({ children }) {
                             return (
                                 <Link href={item.href}
                                     className={`flex flex-col items-center gap-1 pt-2 pb-2 min-w-[56px] transition-colors ${active ? 'text-teal-600' : 'text-slate-400'}`}>
-                                    <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+                                    <Icon className={`w-[22px] h-[22px] ${active ? 'stroke-2' : ''}`} />
                                     <span className="text-[10px] font-semibold">{item.label}</span>
                                 </Link>
                             );

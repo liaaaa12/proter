@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { XMarkIcon as X, CheckIcon as Save, ExclamationCircleIcon as AlertCircle } from '@heroicons/react/24/solid';
 
 export default function GoalForm({ isFormOpen, setIsFormOpen }) {
     const { data, setData, post, processing, reset, errors } = useForm({
@@ -44,7 +44,7 @@ export default function GoalForm({ isFormOpen, setIsFormOpen }) {
                                 <p className="text-slate-400 font-medium text-sm">Rencanakan kesuksesan Anda hari ini.</p>
                             </div>
                             <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                                <X size={24} />
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
 
@@ -87,7 +87,7 @@ export default function GoalForm({ isFormOpen, setIsFormOpen }) {
                             </div>
 
                             <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex gap-3">
-                                <AlertCircle className="text-amber-600 shrink-0" size={18} />
+                                <AlertCircle className="w-[18px] h-[18px] text-amber-600 shrink-0" />
                                 <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
                                     Target akan otomatis terhitung dari transaksi yang dialokasikan ke goal ini saat checkout suara.
                                 </p>
@@ -99,7 +99,7 @@ export default function GoalForm({ isFormOpen, setIsFormOpen }) {
                                     disabled={processing}
                                     className="w-full h-16 bg-teal-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/20"
                                 >
-                                    <Save size={20} />
+                                    <Save className="w-5 h-5" />
                                     Mulai Target
                                 </button>
                             </div>

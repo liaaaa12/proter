@@ -11,17 +11,21 @@ import axios from 'axios';
 
 // ─── Navigation Routes ───────────────────────────────────────────────
 const NAVIGATION_ROUTES = [
-    { path: '/dashboard', label: 'Dashboard', keywords: ['dashboard', 'dasbor', 'beranda', 'home'] },
-    { path: '/budgeting', label: 'Anggaran',  keywords: ['anggaran', 'budget', 'budgeting', 'keuangan', 'finance'] },
-    { path: '/goals',     label: 'Target',    keywords: ['target', 'goals', 'goal', 'tujuan', 'sasaran'] },
+    { path: '/dashboard', label: 'Dashboard', keywords: ['dashboard', 'dasbor', 'beranda', 'home', 'imah'] },
+    { path: '/budgeting', label: 'Anggaran',  keywords: ['anggaran', 'budget', 'budgeting', 'keuangan', 'finance', 'duit', 'artos'] },
+    { path: '/goals',     label: 'Target',    keywords: ['target', 'goals', 'goal', 'tujuan', 'sasaran', 'udagan'] },
     { path: '/laporan',   label: 'Laporan',   keywords: ['laporan', 'report', 'reports', 'statistik', 'statistics'] },
-    { path: '/settings',  label: 'Pengaturan',keywords: ['pengaturan', 'settings', 'setting', 'setelan', 'profil', 'profile'] },
+    { path: '/settings',  label: 'Pengaturan',keywords: ['pengaturan', 'settings', 'setting', 'setelan', 'profil', 'profile', 'pangaturan'] },
 ];
 
 // Prefixes that indicate navigation intent
 const NAV_PREFIXES = [
+    // Indonesian
     'buka', 'ke', 'pergi ke', 'tampilkan', 'lihat',
+    // English
     'open', 'go to', 'navigate to', 'show', 'take me to',
+    // Sunda Priangan
+    'ka', 'tempo', 'buka', 'tingali','lebet','asup'
 ];
 
 // ─── Intent Classifier ──────────────────────────────────────────────

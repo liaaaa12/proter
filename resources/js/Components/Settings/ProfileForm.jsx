@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Mail, Phone } from 'lucide-react';
+import { UserIcon as User, EnvelopeIcon as Mail, PhoneIcon as Phone } from '@heroicons/react/24/solid';
 import SettingsSection from './SettingsSection';
 
 export default function ProfileForm({ data, setData, errors }) {
@@ -13,7 +13,7 @@ export default function ProfileForm({ data, setData, errors }) {
                 <div className="space-y-3 lg:col-span-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
                     <div className="relative">
-                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                        <User className="absolute w-5 h-5 left-5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input 
                             type="text"
                             value={data.name}
@@ -28,7 +28,7 @@ export default function ProfileForm({ data, setData, errors }) {
                 <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Alamat Email</label>
                     <div className="relative">
-                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                        <Mail className="absolute w-5 h-5 left-5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input 
                             type="email"
                             value={data.email}
@@ -42,7 +42,7 @@ export default function ProfileForm({ data, setData, errors }) {
                 <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nomor Telepon</label>
                     <div className="relative">
-                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                        <Phone className="absolute w-5 h-5 left-5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input 
                             type="tel"
                             value={data.phone}

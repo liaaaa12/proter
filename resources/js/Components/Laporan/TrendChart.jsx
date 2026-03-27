@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3 } from 'lucide-react';
+import { ChartBarIcon as BarChart3 } from '@heroicons/react/24/solid';
 import { 
     BarChart, 
     Bar, 
@@ -26,7 +26,7 @@ export default function TrendChart({ chartData }) {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Visualisasi arus kas harian</p>
                 </div>
                 <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center text-teal-600">
-                    <BarChart3 size={24} />
+                    <BarChart3 className="w-6 h-6" />
                 </div>
             </div>
             <div className="h-[350px] w-full">

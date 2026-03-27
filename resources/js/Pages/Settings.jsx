@@ -3,14 +3,14 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    ShieldCheck, 
-    Bell, 
-    Camera,
-    Save,
-    CheckCircle2,
-    Mic,
-    LogOut
-} from 'lucide-react';
+    ShieldCheckIcon as ShieldCheck, 
+    BellIcon as Bell, 
+    CameraIcon as Camera,
+    CheckIcon as Save,
+    CheckCircleIcon as CheckCircle2,
+    MicrophoneIcon as Mic,
+    ArrowRightOnRectangleIcon as LogOut
+} from '@heroicons/react/24/solid';
 
 import ProfileForm from '../Components/Settings/ProfileForm';
 import PasswordForm from '../Components/Settings/PasswordForm';
@@ -102,7 +102,7 @@ export default function Settings({ user }) {
                                     user.name[0]
                                 )}
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <Camera size={28} className="text-white" />
+                                    <Camera className="w-7 h-7 text-white" />
                                 </div>
                             </div>
                             <input 
@@ -118,17 +118,17 @@ export default function Settings({ user }) {
                             <p className="text-slate-400 font-medium text-lg">{user.email || 'Email belum diatur'}</p>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-6">
                                 <span className="px-5 py-2 bg-white/5 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <ShieldCheck size={14} className="text-teal-400" />
+                                    <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
                                     Account Verified
                                 </span>
                                 {user.voice_enrolled_at ? (
                                     <span className="px-5 py-2 bg-teal-500/20 text-teal-400 rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-teal-500/20">
-                                        <Mic size={14} />
+                                        <Mic className="w-3.5 h-3.5" />
                                         Voice ID: Active
                                     </span>
                                 ) : (
                                     <span className="px-5 py-2 bg-rose-500/20 text-rose-400 rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-rose-500/20">
-                                        <Bell size={14} />
+                                        <Bell className="w-3.5 h-3.5" />
                                         Voice ID: Inactive
                                     </span>
                                 )}
@@ -173,7 +173,7 @@ export default function Settings({ user }) {
                                         exit={{ opacity: 0, x: 10 }}
                                         className="text-teal-600 font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-teal-500/10 px-6 py-3 rounded-full border border-teal-500/10 shadow-sm"
                                     >
-                                        <CheckCircle2 size={16} />
+                                        <CheckCircle2 className="w-4 h-4" />
                                         Data berhasil diperbarui
                                     </motion.p>
                                 )}
@@ -187,7 +187,7 @@ export default function Settings({ user }) {
                             className="h-16 px-12 bg-teal-600 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-teal-700 transition-all shadow-2xl shadow-teal-600/40 disabled:opacity-50 group overflow-hidden relative"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                            <Save size={20} className="relative z-10" />
+                            <Save className="w-5 h-5 relative z-10" />
                             <span className="relative z-10">{processing ? 'Memproses...' : 'Simpan Perubahan'}</span>
                         </motion.button>
                     </motion.div>
@@ -206,7 +206,7 @@ export default function Settings({ user }) {
                             as="button"
                             className="w-full h-20 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-[32px] font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-rose-500/20 transition-all"
                         >
-                            <LogOut size={24} />
+                            <LogOut className="w-6 h-6" />
                             Keluar dari Sesi
                         </Link>
                     </motion.div>

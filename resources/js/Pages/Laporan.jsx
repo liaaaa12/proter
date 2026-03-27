@@ -3,16 +3,16 @@ import { Head, router } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Download, 
-    Filter, 
-    Search, 
-    ArrowUpCircle, 
-    ArrowDownCircle, 
-    Wallet,
-    Calendar,
-    ChevronDown,
-    FileText
-} from 'lucide-react';
+    ArrowDownTrayIcon as Download, 
+    FunnelIcon as Filter, 
+    MagnifyingGlassIcon as Search, 
+    ArrowUpCircleIcon as ArrowUpCircle, 
+    ArrowDownCircleIcon as ArrowDownCircle, 
+    WalletIcon as Wallet,
+    CalendarIcon as Calendar,
+    ChevronDownIcon as ChevronDown,
+    DocumentTextIcon as FileText
+} from '@heroicons/react/24/solid';
 import TrendChart from '../Components/Laporan/TrendChart';
 import CategoryChart from '../Components/Laporan/CategoryChart';
 
@@ -27,9 +27,7 @@ const SummaryCard = ({ title, amount, icon: Icon, color }) => (
     >
         <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${color.split(' ')[0]}`} />
         
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 relative z-10 ${color}`}>
-            <Icon size={28} />
-        </div>
+            <Icon className="w-7 h-7" />
         <div className="relative z-10">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{title}</p>
             <h3 className="text-2xl font-bold font-outfit text-slate-900 tracking-tight">
@@ -117,7 +115,7 @@ export default function Laporan({ years }) {
                             className="bg-slate-900 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-slate-800 transition-all shadow-2xl shadow-slate-900/40 group overflow-hidden relative"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                            <Download size={18} className="relative z-10" />
+                            <Download className="w-[18px] h-[18px] relative z-10" />
                             <span className="relative z-10">Unduh PDF</span>
                         </motion.button>
                     </div>
@@ -132,7 +130,7 @@ export default function Laporan({ years }) {
                 >
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-10 h-10 bg-teal-500/10 rounded-xl flex items-center justify-center text-teal-600">
-                            <Filter size={18} />
+                            <Filter className="w-[18px] h-[18px]" />
                         </div>
                         <h4 className="font-black text-slate-900 uppercase tracking-[0.2em] text-[10px]">Filter Periode</h4>
                     </div>
@@ -159,7 +157,7 @@ export default function Laporan({ years }) {
                             </select>
                         </div>
                         <div className="hidden lg:flex items-center justify-center h-14 text-slate-300">
-                             <ArrowUpCircle className="rotate-90 opacity-40" size={24} />
+                             <ArrowUpCircle className="w-6 h-6 rotate-90 opacity-40" />
                         </div>
                         <div className="space-y-3">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sampai Bulan</label>
@@ -189,7 +187,7 @@ export default function Laporan({ years }) {
                                 disabled={loading}
                                 className="h-14 w-14 bg-teal-600 text-white rounded-2xl flex items-center justify-center hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/30 disabled:opacity-50"
                             >
-                                <Search size={22} />
+                                <Search className="w-[22px] h-[22px]" />
                             </motion.button>
                         </div>
                     </div>
@@ -299,7 +297,7 @@ export default function Laporan({ years }) {
                                     <tr>
                                         <td colSpan="5" className="px-10 py-32 text-center text-slate-400">
                                             <div className="flex flex-col items-center gap-6">
-                                                <FileText className="text-slate-100" size={64} />
+                                                <FileText className="w-16 h-16 text-slate-100" />
                                                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Tidak ada data untuk periode ini.</p>
                                             </div>
                                         </td>
