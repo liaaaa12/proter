@@ -2,16 +2,14 @@
 
 namespace App\Services;
 
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Exception\ProcessTimedOutException; // Added
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\DTOs\VoiceVerificationResult; // Added
+use App\DTOs\VoiceVerificationResult;
 
 class VoiceProcessorService
 {
     /**
-     * Execute a voice processing command.
+     * Execute a voice processing command via FastAPI Microservice.
      *
      * @param string $command 'enroll' or 'verify'
      * @param array $args Arguments for the command
@@ -19,56 +17,91 @@ class VoiceProcessorService
      */
     public function execute(string $command, array $args): \App\DTOs\VoiceVerificationResult
     {
-        $python = config('voice.python_path');
-        $script = config('voice.script_path');
+        $apiUrl = rtrim(config('voice.api_url', 'http://127.0.0.1:8000'), '/');
+        $timeout = config('voice.timeout', 60);
 
-        $processArgs = array_merge([$python, $script, $command], $args);
-
-        // Ensure crucial Windows environment variables are passed to the sub-process
-        // This fixes WinError 10106 (Winsock initialization failure) on some Windows systems.
-        $env = [
-            'HOME' => getenv('HOME') ?: base_path(), // Required by cPanel Python wrapper and SpeechBrain
-        ];
-        foreach (['SystemRoot', 'SystemDrive', 'PATH', 'TEMP', 'TMP', 'USER'] as $var) {
-            if ($value = getenv($var)) {
-                $env[$var] = $value;
-            }
-        }
-
-        $process = new Process($processArgs, null, $env);
-        $process->setTimeout(config('voice.timeout'));
+        // Map command strings to actual API endpoints and request bodies
+        $endpoint = '';
+        $payload = [];
 
         try {
-            $process->run();
+            switch ($command) {
+                case 'enroll':
+                    $endpoint = '/enroll';
+                    $payload = [
+                        'audio_path' => $args[0]
+                    ];
+                    break;
 
-            if (!$process->isSuccessful()) {
-                $error = substr($process->getErrorOutput(), 0, 500);
-                Log::channel(config('voice.log_channel'))->error("Voice Process failed: " . $error);
-                return \App\DTOs\VoiceVerificationResult::failure("Process failed: " . $error);
+                case 'verify':
+                    $endpoint = '/verify';
+                    $payload = [
+                        'test_audio_path' => $args[0],
+                        'enrolled_embedding' => is_string($args[1]) ? json_decode($args[1], true) : $args[1],
+                        'threshold' => isset($args[2]) ? (float)$args[2] : 0.25
+                    ];
+                    break;
+
+                case 'verify_secure':
+                    $endpoint = '/verify-secure';
+                    $payload = [
+                        'test_audio_path' => $args[0],
+                        'enrolled_embedding' => is_string($args[1]) ? json_decode($args[1], true) : $args[1],
+                        'threshold' => isset($args[2]) ? (float)$args[2] : 0.70
+                    ];
+                    break;
+
+                case 'verify_with_challenge':
+                    $endpoint = '/verify-with-challenge';
+                    $payload = [
+                        'test_audio_path' => $args[0],
+                        'enrolled_embedding' => is_string($args[1]) ? json_decode($args[1], true) : $args[1],
+                        'expected_text' => $args[2],
+                        'threshold' => isset($args[3]) ? (float)$args[3] : 0.70
+                    ];
+                    break;
+
+                case 'transcribe':
+                    $endpoint = '/transcribe';
+                    $payload = [
+                        'audio_path' => $args[0],
+                        'language' => $args[1] ?? 'id-ID'
+                    ];
+                    break;
+
+                default:
+                    return VoiceVerificationResult::failure("Unknown API command: " . $command);
             }
 
-            $output = $process->getOutput();
+            // HTTP Request to FastAPI
+            $response = Http::timeout($timeout)
+                ->post($apiUrl . $endpoint, $payload);
 
-            // Handle output that might contain debug info or warnings before JSON
-            $jsonStart = strpos($output, '{');
-            if ($jsonStart !== false) {
-                $output = substr($output, $jsonStart);
+            if ($response->failed()) {
+                $errorMsg = $response->json('detail') ?: $response->body();
+                // Ensure error string is not too long or complex array
+                if (is_array($errorMsg)) {
+                    $errorMsg = json_encode($errorMsg);
+                }
+                $this->log("API request failed ($endpoint): " . $errorMsg, 'error');
+                return VoiceVerificationResult::failure("API Request failed: " . $errorMsg);
             }
 
-            $result = json_decode($output, true);
+            $result = $response->json();
 
             if (!$result) {
-                Log::channel(config('voice.log_channel'))->error("Voice Process output invalid JSON: " . substr($output, 0, 200));
-                return \App\DTOs\VoiceVerificationResult::failure("Invalid JSON output from script");
+                $this->log("API output invalid JSON", 'error');
+                return VoiceVerificationResult::failure("Invalid JSON output from API");
             }
 
-            return \App\DTOs\VoiceVerificationResult::fromArray($result);
-        } catch (ProcessTimedOutException $e) {
-            Log::channel(config('voice.log_channel'))->error("Voice Process timeout: " . $e->getMessage());
-            return \App\DTOs\VoiceVerificationResult::failure("Execution timed out after " . config('voice.timeout') . " seconds");
+            return VoiceVerificationResult::fromArray($result);
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $this->log("API connection error: " . $e->getMessage(), 'error');
+            return VoiceVerificationResult::failure("Connection refused. Is the Voica FastAPI server running at $apiUrl?");
         } catch (\Exception $e) {
-            Log::channel(config('voice.log_channel'))->error("Voice Process error: " . $e->getMessage());
-            return \App\DTOs\VoiceVerificationResult::failure($e->getMessage());
+            $this->log("API process error: " . $e->getMessage(), 'error');
+            return VoiceVerificationResult::failure($e->getMessage());
         }
     }
 

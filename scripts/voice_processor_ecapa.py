@@ -12,12 +12,17 @@ import torch
 import torchaudio
 import torchaudio.transforms as T
 
-# Monkeypatch for speechbrain compatibility with torchaudio >= 2.6/2.9
-# Older speechbrain calls list_audio_backends() which was removed in newer torchaudio versions.
+# Monkeypatch for speechbrain compatibility with torchaudio >= 2.1
+# Older speechbrain calls list_audio_backends() and set_audio_backend() which were removed.
 if not hasattr(torchaudio, "list_audio_backends"):
     def list_audio_backends():
-        return []
+        return ["soundfile"]
     torchaudio.list_audio_backends = list_audio_backends
+
+if not hasattr(torchaudio, "set_audio_backend"):
+    def set_audio_backend(backend):
+        pass
+    torchaudio.set_audio_backend = set_audio_backend
 
 # Setup paths
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
