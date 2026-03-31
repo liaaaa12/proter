@@ -7,12 +7,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configuration for the Python-based voice verification engine.
+    | Now runs as a FastAPI Microservice for performance.
     |
     */
 
-    'python_path' => env('PYTHON_EXEC', base_path('.venv/Scripts/python.exe')),
-
-    'script_path' => base_path('scripts/voice_processor_ecapa.py'),
+    'api_url' => env('VOICE_API_URL', 'http://127.0.0.1:8000'),
 
     'ffmpeg_path' => env('FFMPEG_PATH', 'ffmpeg'),
 
