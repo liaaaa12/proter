@@ -1,20 +1,26 @@
 import { useState, useRef, useCallback } from 'react';
 
-export const useAudioRecorder = () => {
+/**
+ * useAudioRecorder — Callback-based (no useEffect polling)
+ * 
+ * Menerima `onStop` callback yang dipanggil LANGSUNG dari MediaRecorder.onstop
+ * event — satu kali, deterministik, tidak ada React re-render yang bisa memicunya lagi.
+ */
+export const useAudioRecorder = ({ onStop } = {}) => {
     const [isRecording, setIsRecording] = useState(false);
-    const [audioBlob, setAudioBlob] = useState(null);
-    const [audioBase64, setAudioBase64] = useState(null);
     const [audioUrl, setAudioUrl] = useState(null);
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
     const analyserRef = useRef(null);
     const audioContextRef = useRef(null);
+    const onStopRef = useRef(onStop);
+    // Keep ref up to date without triggering re-render loops
+    onStopRef.current = onStop;
 
     const startRecording = useCallback(async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
-            // Setup Web Audio API for real-time analysis
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const source = audioContext.createMediaStreamSource(stream);
             const analyser = audioContext.createAnalyser();
@@ -29,32 +35,28 @@ export const useAudioRecorder = () => {
             chunksRef.current = [];
 
             mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    chunksRef.current.push(e.data);
-                }
+                if (e.data.size > 0) chunksRef.current.push(e.data);
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
-                setAudioBlob(blob);
-                setAudioUrl(URL.createObjectURL(blob));
+                const blob = new Blob(chunksRef.current, { 
+                    type: mediaRecorder.mimeType || 'audio/webm' 
+                });
                 
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = () => {
-                    const base64data = reader.result;
-                    setAudioBase64(base64data);
-                };
-
-                // Stop all tracks to release the microphone
+                const url = URL.createObjectURL(blob);
+                setAudioUrl(url);
+                
                 stream.getTracks().forEach(track => track.stop());
-                
-                // Close audio context
                 if (audioContextRef.current) {
                     audioContextRef.current.close();
                     audioContextRef.current = null;
                 }
                 analyserRef.current = null;
+
+                // ✅ LANGSUNG panggil callback dengan blob — tidak perlu useState/useEffect
+                if (onStopRef.current) {
+                    onStopRef.current(blob);
+                }
             };
 
             mediaRecorder.start();
@@ -72,19 +74,19 @@ export const useAudioRecorder = () => {
         }
     }, [isRecording]);
 
+    const clearAudio = useCallback(() => {
+        if (audioUrl) {
+            URL.revokeObjectURL(audioUrl);
+            setAudioUrl(null);
+        }
+    }, [audioUrl]);
+
     return {
         isRecording,
-        audioBlob,
-        audioBase64,
         audioUrl,
         analyserRef,
         startRecording,
         stopRecording,
-        clearAudio: () => {
-            setAudioBlob(null);
-            setAudioBase64(null);
-            if (audioUrl) URL.revokeObjectURL(audioUrl);
-            setAudioUrl(null);
-        }
+        clearAudio
     };
 };

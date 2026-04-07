@@ -71,7 +71,9 @@ class LaporanController extends Controller
         }
 
         // Get transactions ordered by date
-        $transactions = $query->orderBy('tanggal', 'asc')->get();
+        // LIMIT: Safety cap at 500 rows to prevent PHP memory exhaustion on large datasets.
+        // The running_balance calculation is now done client-side from this dataset.
+        $transactions = $query->orderBy('tanggal', 'asc')->limit(500)->get();
 
         // Calculate running balance
         $runningBalance = 0;

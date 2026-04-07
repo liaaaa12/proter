@@ -1,59 +1,91 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Voica (Proter) 🎙️💸
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Voica adalah aplikasi Asisten Keuangan Berbasis Suara yang memungkinkan pengguna untuk mencatat transaksi, menetapkan anggaran, dan mengawasi target keuangan — semuanya cukup dengan suara, menggunakan AI yang berjalan **100% Offline**.
 
-## About Laravel
+## 🚀 Fitur Utama
+- **🎙️ Voice Command Offline:** Terjemahkan ucapan Anda menjadi catatan pengeluaran/pemasukan tanpa perlu koneksi internet (Mendukung Bahasa Indonesia dan logat Sunda Priangan melalui adaptasi AI Faster Whisper).
+- **🔒 Anti-Spoofing & Speaker Verification:** (*Dalam Pengembangan*) Mengamankan data pelaporan menggunakan identifikasi pola suara (ECAPA-TDNN) dan pendeteksi suara palsu (AASIST).
+- **⚡ Single Page Application:** Antarmuka modern yang secepat kilat dibangun menggunakan React & Inertia.js.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠️ Tech Stack
+Voica dibangun menggunakan struktur **Microservices** lokal untuk memastikan performa AI yang konstan tanpa membebani web server utama.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Frontend (UI & Tampilan)
+- **React.js** (dikompilasi dengan Vite)
+- **Tailwind CSS** (animasi halus & desain responsif)
+- **Inertia.js** (Jembatan navigasi antara React dan Laravel tanpa API publik)
 
-## Learning Laravel
+### 2. Backend (Logika Bisnis & Database)
+- **Laravel (PHP 8+)** (Menyediakan arsitektur MVC, ORM, dan Session management)
+- **SQLite** (Database default yang ringan)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 3. AI Engine (Microservice)
+- **Python (FastAPI)** (Server AI asinkron yang berjalan pada *port* 8000)
+- **Faster Whisper** (Mesin transkripsi offline yang luar biasa cepat)
+- **FFmpeg** (Sistem pengubah format audio pada Host OS)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 📂 Struktur Folder Utama
+Aplikasi baru saja di-refactor secara mendalam (*Clean Architecture*). Berikut adalah navigasinya:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- `/app/Services/` → Otak dari backend Laravel. Menangani logika parsing NLP dan transaksi keuangan.
+- `/resources/js/api/` → Otak dari frontend React. Memusatkan pemanggilan asinkron (Axios) ke Laravel API maupun FastAPI.
+- `/resources/js/Components/` → Potongan antarmuka (Sidebar, MobileNav, Feedback Layar) yang bisa dipakai ulang.
+- `/scripts/` → Kumpulan AI engine Python dan skrip penggerak microservice `start-fastapi.bat`.
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 💻 Cara Menjalankan Aplikasi Secara Lokal
 
-## Contributing
+Karena Voica menggunakan AI, Anda memerlukan instalasi Python dan FFmpeg di laptop/server lokal Anda.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 1. Persiapan Awal
+Pastikan Anda telah meng-install:
+- PHP 8.2+
+- Node.js 18+ & NPM
+- Python 3.10+
+- FFmpeg (Sudah terdaftar di Path Environment Windows/Linux)
 
-## Code of Conduct
+### 2. Install Dependencies Web
+Buka terminal di root proyek, lalu:
+```bash
+composer install
+npm install
+npm run build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 3. Install Dependencies AI (Satu Kali Saja)
+```bash
+cd scripts
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r ../requirements-fastapi.txt
+pip install faster-whisper
+```
+> *Catatan: Model AI (Faster Whisper tipe 'small') berukuran ratusan Megabyte akan otomatis diunduh saat pertama kali server AI berjalan.*
 
-## Security Vulnerabilities
+### 4. Nyalakan Service Secara Bersamaan
+Anda butuh **DUA** Terminal menyala.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+**Terminal 1 (Laravel Web Server):**
+```bash
+php artisan serve --port=8080
+```
 
-## License
+**Terminal 2 (Python AI Server):**
+```bash
+# Jalankan skrip ini (di Windows)
+scripts\start-fastapi.bat
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+> **Akses Aplikasi:** Bukalah browser dan kunjungi `http://127.0.0.1:8080`
+
+---
+
+## 📞 Troubleshooting
+- **Linter Errors Controller / "Undefined method"**: Pastikan Anda menggunakan facade `Auth::id()` bukan helper function langsung. Ini sudah diselesaikan via Service layer.
+- **Microphone tidak merespon / Error 503**: FastAPI Python anda mungkin belum siap ("Memuat model..."). Harap tunggu dan periksa Terminal 2.
+- **Audio Error (PCM / WAV format)**: Pastikan `FFmpeg` ter-install dan dapat diakses secara global (`ffmpeg -version` di dalam CMD/Powershell).

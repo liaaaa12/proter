@@ -22,14 +22,16 @@ export default function Auth({ mode = 'login', status: propStatus }) {
         voice_audio_base64: '',
     });
 
-    const { isRecording, audioBase64, audioUrl, analyserRef, startRecording, stopRecording, clearAudio } = useAudioRecorder();
-
-    useEffect(() => {
-        if (audioBase64) {
-            setData('voice_audio_base64', audioBase64);
+    const handleVoiceStop = (blob) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+            setData('voice_audio_base64', reader.result);
             setVoiceStatus('ready');
-        }
-    }, [audioBase64]);
+        };
+    };
+
+    const { isRecording, audioUrl, analyserRef, startRecording, stopRecording, clearAudio } = useAudioRecorder({ onStop: handleVoiceStop });
 
     const toggleMode = () => {
         const newMode = authMode === 'login' ? 'register' : 'login';

@@ -1,46 +1,34 @@
-# Project proter: Optimization & Refactoring
+# Project proter: Grand Refactoring & Clean Architecture
 
 ## Core Value
-
-A clean, efficient, and maintainable Voice Verification system that integrates Laravel (admin/UI) with Python (AI processing) seamlessly, with a high standard of code cleanliness across frontend and backend.
+A highly maintainable, modular, and organized codebase for Voica (Proter) spanning across Laravel backend APIs, React/Inertia Frontend, and FastAPI Python microservices. The focus is to eliminate monolithic files, extract business logic into services, reorganize directory structures logically, and adhere to SOLID principles.
 
 ## Context
-
-"proter" is a brownfield project implementing speaker verification using ECAPA-TDNN. The current codebase has been mapped and shows potential for optimization in the bridge between Laravel and Python, and significant needs for code refactoring (shorter, cleaner files) and logical folder organization in both frontend and backend layers.
+"proter" has grown into a functional voice-driven financial app with a complex tech stack (Laravel + React + Python AI). However, rapid feature development has led to significant technical debt: bloated React components (e.g., `AuthLayout.jsx`), heavy "fat-controllers" in Laravel (`VoiceTransactionController`), and lack of component/service grouping. The goal of this milestone is a comprehensive cleanup of both Frontend and Backend without breaking existing functionality.
 
 ## Requirements
 
 ### Validated
-
-- ✓ **Multi-model Voice Processing**: Ability to use ECAPA-TDNN and standard models via Python scripts.
-- ✓ **Laravel/React UI**: Admin dashboard using Filament and Inertia.js.
-- ✓ **Testing Infrastructure**: Basic PHPUnit setup with SQLite in-memory configuration.
-- ✓ **Global GSD-CC Setup**: AI-driven development environment configured globally.
+- ✓ **Voice STT Microservice** — Faster Whisper running fully offline on port 8000
+- ✓ **Inertia SPA Flow** — React routing via Laravel
+- ✓ **Core Operations** — Dashboard, Budgeting, Laporan working seamlessly
 
 ### Active (Hypotheses)
-
-- [ ] **Standardized Python-Laravel Bridge**: Replace ad-hoc script calls with a robust service layer or API.
-- [ ] **Clean Architecture implementation**: Refactor models and controllers to follow SOLID principles.
-- [ ] **Frontend Modularization**: Split large React pages into smaller, reusable components.
-- [ ] **Folder Organization**: Clean up root directories and organize blade/JS files into logical subfolders.
-- [ ] **Performance Audit**: Identify and resolve bottlenecks in audio processing and data flow.
-- [ ] **Maintainability Boost**: Improve docstrings, type hinting, and error handling across both languages.
-- [ ] **Unified Dev Environment**: Ensure seamless setup for both PHP and Python dependencies.
+- [ ] **Frontend API Organization:** Create a dedicated `api/` folder in the frontend (e.g., `resources/js/api/`) to centralize all Axios or Fetch API calls instead of having them scattered in hooks or components.
+- [ ] **Frontend Component Separation:** Break down `AuthLayout.jsx` and page files into logical `UI/`, `Layouts/`, and feature-specific component folders.
+- [ ] **Backend Service Layer Extraction:** Move complex logic from Laravel API Controllers into dedicated `App\Services` classes.
+- [ ] **Hooks Organization:** Clean up React Custom Hooks (`useVoiceCommand`, `useAudioRecorder`) and ensure bulletproof strictness.
+- [ ] **Directory Restructuring:** Establish clean folder structures for both React resources (`resources/js`) and Python script orchestrators (`scripts/`).
+- [ ] **Code Cleansing:** Remove obsolete/unused dead code and deprecated libraries globally.
 
 ### Out of Scope
-
-- [ ] **Mobile Native Apps** (Future milestone)
-- [ ] **Cloud Migration** (Stay local for now)
+- Adding new heavy user-facing features (Focus is strictly on code quality and structure).
+- Modifying AI training models (ECAPA/Faster Whisper inference logic works well).
 
 ## Key Decisions
-
-| Decision            | Rationale                                                                        | Outcome     |
-| ------------------- | -------------------------------------------------------------------------------- | ----------- |
-| Global GSD-CC       | Remove project clutter and ensure consistent AI orchestration across workspaces. | ✓ Completed |
-| Codebase Mapping    | Establish technical baseline before refactoring.                                 | ✓ Completed |
-| Brownfield Refactor | Focus on improving existing logic rather than rewriting from scratch.            | Pending     |
-| Component Splitting | Break down huge Blade and JSX files into smaller fragments for maintainability.  | Pending     |
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Full-Stack Clean Up | Both FE and BE suffer from bloating, so resolving one half will not resolve tech debt holistically. | Pending |
 
 ---
-
-_Last updated: 2026-03-05 after adding project-wide refactoring goals_
+*Last updated: 2026-04-06 after initialization*
