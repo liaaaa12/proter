@@ -83,9 +83,3 @@ scripts\start-fastapi.bat
 
 > **Akses Aplikasi:** Bukalah browser dan kunjungi `http://127.0.0.1:8080`
 
----
-
-## 📞 Troubleshooting
-- **Linter Errors Controller / "Undefined method"**: Pastikan Anda menggunakan facade `Auth::id()` bukan helper function langsung. Ini sudah diselesaikan via Service layer.
-- **Microphone tidak merespon / Error 503**: FastAPI Python anda mungkin belum siap ("Memuat model..."). Harap tunggu dan periksa Terminal 2.
-- **Audio Error (PCM / WAV format)**: Pastikan `FFmpeg` ter-install dan dapat diakses secara global (`ffmpeg -version` di dalam CMD/Powershell).
