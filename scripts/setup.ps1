@@ -14,6 +14,6 @@ python.exe -m pip install --upgrade pip
 pip install --upgrade setuptools wheel
 
 Write-Host "Installing dependencies from requirements.txt..."
-pip install -r requirements.txt
+pip install -r ..\requirements.txt
 
 Write-Host "Setup complete!" -ForegroundColor Green

@@ -62,7 +62,7 @@ npm run build
 cd scripts
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r ../requirements-fastapi.txt
+pip install -r ../requirements.txt
 pip install faster-whisper
 ```
 > *Catatan: Model AI (Faster Whisper tipe 'small') berukuran ratusan Megabyte akan otomatis diunduh saat pertama kali server AI berjalan.*
