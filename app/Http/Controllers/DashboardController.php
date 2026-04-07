@@ -90,6 +90,7 @@ class DashboardController extends Controller
         $saldo = $totalPemasukan - $totalPengeluaran;
 
         // Get all goals and calculate their progress
+        // FIX: Replaced N+1 loop (1 query per goal) with a single GROUP BY aggregation query.
         $allGoals = DB::table('goals')
             ->where('user_id', $userId)
             ->get();
@@ -98,17 +99,20 @@ class DashboardController extends Controller
         $goalPercentage = 0;
 
         if ($allGoals->isNotEmpty()) {
-            // Calculate nominalBerjalan from transactions for each goal
-            $goalsWithProgress = $allGoals->map(function ($g) use ($userId) {
-                // Sum all transactions allocated to this goal
-                $nominalBerjalan = DB::table('transaction')
-                    ->where('user_id', $userId)
-                    ->where('goal_id', $g->id)
-                    ->sum('jumlah');
+            $goalIds = $allGoals->pluck('id');
 
+            // Single aggregation query — replaces the N+1 loop
+            $goalSums = DB::table('transaction')
+                ->where('user_id', $userId)
+                ->whereIn('goal_id', $goalIds)
+                ->groupBy('goal_id')
+                ->select('goal_id', DB::raw('SUM(jumlah) as total'))
+                ->pluck('total', 'goal_id');
+
+            $goalsWithProgress = $allGoals->map(function ($g) use ($goalSums) {
+                $nominalBerjalan = $goalSums->get($g->id, 0);
                 $g->nominalBerjalan = $nominalBerjalan;
                 $g->percentage = $g->targetNominal > 0 ? ($nominalBerjalan / $g->targetNominal) * 100 : 0;
-
                 return $g;
             });
 

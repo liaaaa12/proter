@@ -1,15 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import axios from 'axios';
+import { useAudioRecorder } from './useAudioRecorder';
+import { transcribeAudioOffline, parseVoiceTransaction } from '../api/voiceApi';
 
 /**
- * Unified Voice Command Hook
- * Single voice button that routes intent to either:
- *   - Page navigation ("buka dashboard", "open budget")
- *   - Transaction creation ("pengeluaran makan 50 ribu")
+ * useVoiceCommand — Callback-based architecture
+ * 
+ * TIDAK ada useEffect yang memantau audioBlob.
+ * Processing dipicu langsung dari onStop callback MediaRecorder.
+ * Ini mengeliminasi SEMUA kemungkinan loop dari React re-render.
  */
 
-// ─── Navigation Routes ───────────────────────────────────────────────
 const NAVIGATION_ROUTES = [
     { path: '/dashboard', label: 'Dashboard', keywords: ['dashboard', 'dasbor', 'beranda', 'home', 'imah'] },
     { path: '/budgeting', label: 'Anggaran',  keywords: ['anggaran', 'budget', 'budgeting', 'keuangan', 'finance', 'duit', 'artos'] },
@@ -18,21 +19,14 @@ const NAVIGATION_ROUTES = [
     { path: '/settings',  label: 'Pengaturan',keywords: ['pengaturan', 'settings', 'setting', 'setelan', 'profil', 'profile', 'pangaturan'] },
 ];
 
-// Prefixes that indicate navigation intent
 const NAV_PREFIXES = [
-    // Indonesian
     'buka', 'ke', 'pergi ke', 'tampilkan', 'lihat',
-    // English
     'open', 'go to', 'navigate to', 'show', 'take me to',
-    // Sunda Priangan
-    'ka', 'tempo', 'buka', 'tingali','lebet','asup'
+    'ka', 'tempo', 'tingali', 'lebet', 'asup',
 ];
 
-// ─── Intent Classifier ──────────────────────────────────────────────
 function classifyIntent(transcript) {
     const text = transcript.toLowerCase().trim();
-
-    // Check if it starts with a navigation prefix
     for (const prefix of NAV_PREFIXES) {
         if (text.startsWith(prefix + ' ')) {
             const target = text.slice(prefix.length).trim();
@@ -43,29 +37,25 @@ function classifyIntent(transcript) {
                     }
                 }
             }
-            // Has navigation prefix but unrecognized target
-            return { type: 'unknown', text: transcript };
         }
     }
-
-    // No navigation prefix → treat as transaction
     return { type: 'transaction', text: transcript };
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────
 export function useVoiceCommand({ onTransactionParsed, onTransactionError } = {}) {
-    const [isListening, setIsListening] = useState(false);
-    const [transcript, setTranscript] = useState('');
     const [feedback, setFeedback] = useState(null);
-    const [isSupported, setIsSupported] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
-    const recognitionRef = useRef(null);
+    const [transcript, setTranscript] = useState('');
     const feedbackTimerRef = useRef(null);
-
-    useEffect(() => {
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) setIsSupported(false);
-    }, []);
+    
+    // Lock ref — mencegah double-processing jika ada race condition
+    const processingLockRef = useRef(false);
+    
+    // Simpan callback di ref agar onStop closure tidak stale
+    const onTransactionParsedRef = useRef(onTransactionParsed);
+    const onTransactionErrorRef = useRef(onTransactionError);
+    onTransactionParsedRef.current = onTransactionParsed;
+    onTransactionErrorRef.current = onTransactionError;
 
     const showFeedback = useCallback((type, message, duration = 3000) => {
         if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
@@ -80,119 +70,113 @@ export function useVoiceCommand({ onTransactionParsed, onTransactionError } = {}
         setFeedback(null);
     }, []);
 
-    // ── Handle a final transcript ────────────────────────────────────
-    const handleFinalTranscript = useCallback(async (text) => {
-        const intent = classifyIntent(text);
-
-        switch (intent.type) {
-            case 'navigate':
-                showFeedback('success', `Membuka ${intent.label}...`);
-                setTimeout(() => router.visit(intent.path), 600);
-                break;
-
-            case 'transaction':
-                showFeedback('processing', 'Memproses transaksi...', 0);
-                setIsProcessing(true);
-                try {
-                    const res = await axios.post('/api/parse-voice-text', { text: intent.text });
-                    if (res.data.success) {
-                        showFeedback('success', 'Transaksi terdeteksi!');
-                        onTransactionParsed?.(res.data.data);
-                    } else {
-                        showFeedback('error', res.data.message || 'Gagal memproses transaksi.');
-                        onTransactionError?.(res.data.message);
-                    }
-                } catch (err) {
-                    console.error('Voice transaction parse error:', err);
-                    showFeedback('error', 'Gagal memproses perintah suara.');
-                    onTransactionError?.(err.message);
-                } finally {
-                    setIsProcessing(false);
-                }
-                break;
-
-            default:
-                showFeedback('error', `"${text}" — Perintah tidak dikenali.`);
-        }
-    }, [showFeedback, onTransactionParsed, onTransactionError]);
-
-    // ── Stop ─────────────────────────────────────────────────────────
-    const stopListening = useCallback(() => {
-        if (recognitionRef.current) {
-            recognitionRef.current.abort();
-            recognitionRef.current = null;
-        }
-        setIsListening(false);
-    }, []);
-
-    // ── Start ────────────────────────────────────────────────────────
-    const startListening = useCallback(() => {
-        if (!isSupported) {
-            showFeedback('error', 'Browser tidak mendukung perintah suara.');
+    // ── Callback dipanggil LANGSUNG dari MediaRecorder.onstop ────────
+    // Tidak melalui useState/useEffect — hanya sekali, deterministik.
+    const handleBlobReady = useCallback(async (blob) => {
+        // Guard: Jika sudah ada proses lain yang jalan, abaikan
+        if (processingLockRef.current) {
+            console.log('[Voice] Blob received but processing lock is active. Ignoring.');
             return;
         }
-        if (isListening) { stopListening(); return; }
+        if (!blob || blob.size === 0) {
+            showFeedback('error', 'Tidak ada audio yang direkam.');
+            return;
+        }
 
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SR();
-        recognition.lang = 'id-ID';
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 3;
+        processingLockRef.current = true;
+        setIsProcessing(true);
+        showFeedback('processing', 'Mentranskripsi suara...', 0);
 
-        recognition.onstart = () => {
-            setIsListening(true);
-            setTranscript('');
-            showFeedback('listening', 'Mendengarkan... Ucapkan perintah.', 0);
-        };
+        try {
+            // ── Step 1: Transcribe ──────────────────────────────────
+            const transcribeRes = await transcribeAudioOffline(blob);
 
-        recognition.onresult = (event) => {
-            let interim = '';
-            let final = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                if (event.results[i].isFinal) final += event.results[i][0].transcript;
-                else interim += event.results[i][0].transcript;
+            if (!transcribeRes.success) {
+                showFeedback('error', transcribeRes.error || 'Gagal transkripsi.');
+                return;
             }
-            if (interim) setTranscript(interim);
-            if (final) {
-                setTranscript(final);
-                handleFinalTranscript(final);
+
+            const text = (transcribeRes.transcript || '').trim();
+            if (!text) {
+                showFeedback('error', 'Suara tidak terdeteksi. Coba lebih jelas.');
+                return;
             }
-        };
 
-        recognition.onerror = (event) => {
-            setIsListening(false);
-            recognitionRef.current = null;
-            const msgs = {
-                'not-allowed': 'Izin mikrofon ditolak. Aktifkan di pengaturan browser.',
-                'no-speech': 'Tidak ada suara terdeteksi. Coba lagi.',
-                'network': 'Koneksi internet diperlukan untuk pengenalan suara.',
-            };
-            showFeedback('error', msgs[event.error] || 'Terjadi kesalahan. Coba lagi.');
-        };
+            setTranscript(text);
 
-        recognition.onend = () => {
-            setIsListening(false);
-            recognitionRef.current = null;
-        };
+            // ── Step 2: Classify & Act ──────────────────────────────
+            const intent = classifyIntent(text);
 
-        recognitionRef.current = recognition;
-        recognition.start();
-    }, [isSupported, isListening, stopListening, showFeedback, handleFinalTranscript]);
+            if (intent.type === 'navigate') {
+                showFeedback('success', `Membuka ${intent.label}...`);
+                setTimeout(() => router.visit(intent.path), 600);
+                return;
+            }
 
-    // Cleanup
+            // Transaction flow
+            showFeedback('processing', 'Memproses transaksi...', 0);
+
+            const parseRes = await parseVoiceTransaction(intent.text);
+            if (parseRes.success) {
+                showFeedback('success', 'Transaksi terdeteksi!');
+                onTransactionParsedRef.current?.(parseRes.data);
+            } else {
+                showFeedback('error', parseRes.message || 'Gagal memproses transaksi.');
+                onTransactionErrorRef.current?.(parseRes.message);
+            }
+
+        } catch (err) {
+            console.error('[Voice] Error:', err);
+            if (err.code === 'ERR_NETWORK') {
+                showFeedback('error', 'Server AI tidak aktif. Jalankan start-fastapi.bat.');
+            } else {
+                showFeedback('error', 'Gagal memproses suara.');
+            }
+            onTransactionErrorRef.current?.(err.message);
+        } finally {
+            setIsProcessing(false);
+            processingLockRef.current = false;
+        }
+    }, [showFeedback]);
+
+    const {
+        isRecording,
+        audioUrl,
+        analyserRef,
+        startRecording,
+        stopRecording,
+        clearAudio,
+    } = useAudioRecorder({ onStop: handleBlobReady });
+
+    const startListening = useCallback(async () => {
+        if (isRecording) {
+            stopRecording();
+            return;
+        }
+        if (processingLockRef.current) return;
+
+        clearAudio();
+        setTranscript('');
+        showFeedback('listening', 'Mendengarkan...', 0);
+        await startRecording();
+    }, [isRecording, startRecording, stopRecording, clearAudio, showFeedback]);
+
+    const stopListening = useCallback(() => {
+        if (isRecording) stopRecording();
+    }, [isRecording, stopRecording]);
+
     useEffect(() => {
         return () => {
-            recognitionRef.current?.abort();
             if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
         };
     }, []);
 
     return {
-        isListening,
-        isSupported,
+        isListening: isRecording,
+        isSupported: true,
         isProcessing,
         transcript,
+        audioUrl,
         feedback,
         startListening,
         stopListening,

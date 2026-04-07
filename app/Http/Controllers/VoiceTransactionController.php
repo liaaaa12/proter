@@ -3,25 +3,22 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use App\Services\TransactionService;
-use App\Services\NLPParserService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\TransactionService;
+use App\Services\VoiceTransactionService;
 
 class VoiceTransactionController extends Controller
 {
     protected TransactionService $transactionService;
-    protected NLPParserService $nlpParserService;
+    protected VoiceTransactionService $voiceTransactionService;
 
-    public function __construct(TransactionService $transactionService, NLPParserService $nlpParserService)
+    public function __construct(TransactionService $transactionService, VoiceTransactionService $voiceTransactionService)
     {
         $this->transactionService = $transactionService;
-        $this->nlpParserService = $nlpParserService;
+        $this->voiceTransactionService = $voiceTransactionService;
     }
 
-    /**
-     * Store a new transaction
-     */
     public function store(Request $request)
     {
         try {
@@ -34,7 +31,8 @@ class VoiceTransactionController extends Controller
                 'goal_id' => 'nullable|exists:goals,id'
             ]);
 
-            $transactionId = $this->transactionService->store(auth()->id(), $validated);
+            $userId = Auth::id(); // Fixing linter 'Undefined method id.' by strictly using facade
+            $transactionId = $this->transactionService->store($userId, $validated);
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -43,7 +41,6 @@ class VoiceTransactionController extends Controller
                     'transaction_id' => $transactionId
                 ]);
             }
-
             return redirect()->back()->with('success', 'Transaksi berhasil disimpan');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->wantsJson() || $request->ajax()) {
@@ -58,9 +55,6 @@ class VoiceTransactionController extends Controller
         }
     }
 
-    /**
-     * Update an existing transaction
-     */
     public function update(Request $request, $id)
     {
         try {
@@ -72,7 +66,7 @@ class VoiceTransactionController extends Controller
                 'keterangan' => 'required|string'
             ]);
 
-            $this->transactionService->update($id, auth()->id(), $validated);
+            $this->transactionService->update($id, Auth::id(), $validated);
 
             return redirect()->back()->with('success', 'Transaksi berhasil diperbarui');
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -82,83 +76,33 @@ class VoiceTransactionController extends Controller
         }
     }
 
-    /**
-     * Delete a transaction
-     */
     public function destroy($id)
     {
         try {
-            $this->transactionService->destroy($id, auth()->id());
+            $this->transactionService->destroy($id, Auth::id());
             return redirect()->back()->with('success', 'Transaksi berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Parse voice text menjadi data transaksi
-     */
     public function parseVoiceText(Request $request)
     {
         try {
             $text = $request->input('text');
-            if (empty($text)) {
-                return response()->json(['success' => false, 'message' => 'Teks kosong'], 400);
-            }
+            $data = $this->voiceTransactionService->parseTransactionText($text, Auth::id());
 
-            // The existing NLPParserService returns a different shape and expects different rules, 
-            // but for safety during refactor we map its parsed data to what the frontend expects.
-            // Note: I will map the result to match the old shape.
-            $parsedData = $this->nlpParserService->parse($text);
-
-            // To ensure 100% compatibility with the old frontend logic, we merge smart logic if needed.
-            if ($parsedData['success']) {
-                $data = [
-                    'jenis' => $parsedData['jenis'],
-                    'kategori' => $parsedData['kategori'],
-                    'jumlah' => $parsedData['jumlah'],
-                    'keterangan' => $parsedData['keterangan'],
-                    'budget_id' => null,
-                    'goal_id' => null,
-                    'budget_name' => $parsedData['budget_allocation'],
-                    'goal_name' => $parsedData['goal_allocation']
-                ];
-
-                // Attempt to resolve IDs from names (the old logic did this inside the controller)
-                if ($data['budget_name']) {
-                    $budget = DB::table('budget')
-                        ->where('user_id', auth()->id())
-                        ->where('namaBudget', 'LIKE', '%' . $data['budget_name'] . '%')
-                        ->first();
-                    if ($budget) $data['budget_id'] = $budget->id;
-                }
-
-                if ($data['goal_name']) {
-                    $goal = DB::table('goals')
-                        ->where('user_id', auth()->id())
-                        ->where('namaGoal', 'LIKE', '%' . $data['goal_name'] . '%')
-                        ->first();
-                    if ($goal) $data['goal_id'] = $goal->id;
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'data' => $data,
-                    'raw_text' => $text
-                ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => $parsedData['error'] ?? 'Gagal mem-parsing teks'
-                ], 400);
-            }
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'raw_text' => $text
+            ]);
         } catch (\Exception $e) {
-            Log::error('Error parsing voice text: ' . $e->getMessage());
+            $code = $e->getMessage() === 'Teks kosong' ? 400 : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat parsing text',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => $e->getMessage()
+            ], $code);
         }
     }
 
@@ -166,7 +110,7 @@ class VoiceTransactionController extends Controller
     {
         try {
             $budgets = DB::table('budget')
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->select('id', 'namaBudget', 'kategori', 'jumlah', 'jumlahBerjalan')
                 ->get();
             return response()->json(['success' => true, 'data' => $budgets]);
@@ -179,12 +123,35 @@ class VoiceTransactionController extends Controller
     {
         try {
             $goals = DB::table('goals')
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->select('id', 'namaGoal', 'targetNominal', 'nominalBerjalan', 'tanggalTarget')
                 ->get();
             return response()->json(['success' => true, 'data' => $goals]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Gagal mengambil data goals'], 500);
+        }
+    }
+
+    public function transcribeAudio(Request $request)
+    {
+        try {
+            $request->validate([
+                'audio' => 'required|file|mimes:webm,wav,mp3,ogg,flac,m4a|max:20480',
+            ]);
+
+            $result = $this->voiceTransactionService->transcribeAudio($request->file('audio'));
+
+            return response()->json([
+                'success'    => true,
+                'transcript' => $result['transcript'],
+                'language'   => $result['language'],
+            ]);
+        } catch (\Exception $e) {
+            $code = str_contains($e->getMessage(), 'tidak merespons') ? 503 : 500;
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], $code);
         }
     }
 }

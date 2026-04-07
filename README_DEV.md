@@ -1,72 +1,87 @@
-# Developer Guide: Proter Voice Verification System
+# Developer Guide: Voica (Proter) System 🧑‍💻⚙️
 
-This document provides a technical overview and setup instructions for the refactored voice verification system.
+Dokumen ini disusun untuk Software Engineer yang akan memelihara atau melanjutkan pengembangan Voica. Aplikasi ini baru saja mengalami **Grand Refactoring** yang beralih dari pemanggilan skrip via CLI ke arsitektur **Python FastAPI Microservices** secara penuh.
 
-## 🏗️ Architecture Overview
+## 🏗️ Architecture Overview (Refactored)
 
-The system uses a **Standardized Bridge** between Laravel (PHP) and a Python-powered voice processing engine.
+Sistem saat ini terbagi menjadi 3 Lapisan independen yang terkoneksi melalui antarmuka HTTP/AJAX.
 
-### Data Flow
+### 1. Frontend Layer (React + Inertia JS)
+Di-hosting di dalam ekosistem Laravel melalui Vite, tetapi ditulis 100% secara modular.
+*   **Logic Abstraction:** Semua panggilan *network* menggunakan library asinkron (Axios) wajib diletakkan di `resources/js/api/` (misal: `voiceApi.js` atau `apiClient.js`). Hook dan komponen dilarang melakukan pemanggilan Axios secara mentah.
+*   **Component Structure:** 
+    *   `resources/js/Pages/` (Hanya berisi struktur halaman).
+    *   `resources/js/Components/Layout/` (Pecahan modular *Sidebar*, *MobileNav*).
+    *   `resources/js/Components/Voice/` (Elemen animasi UI khusus mikrofon).
 
-1. **Frontend**: Captures audio and sends base64/file to Laravel.
-2. **Laravel Controller**: Injects domain services.
-3. **Domain Services**:
-    - `AudioProcessingService`: Decodes base64 and normalizes audio to 16kHz Mono WAV via FFmpeg.
-    - `VoiceEnrollmentService`: Orchestrates the pendaftaran (enrollment) flow.
-    - `VoiceVerificationService`: Orchestrates the verification flow.
-4. **Subsystem Bridge**: `VoiceProcessorService` executes Python scripts via Symfony Process, passing arguments and environment variables.
-5. **Python Engine**:
-    - `AASIST`: Layer 1/2 for Anti-Spoofing.
-    - `ECAPA-TDNN`: Layer 2/3 for Speaker Verification (Speaker Embeddings).
-    - `SpeechBrain/STT`: Layer 3 for Challenge Validation.
-6. **Result**: Python outputs JSON, which is mapped to a typed `VoiceVerificationResult` DTO in PHP.
+### 2. Backend Layer (Laravel PHP)
+Bertindak sebagai "Controller" dan gerbang akses ke Database SQLite.
+*   **Thin Controllers:** File di dalam `app/Http/Controllers` (seperti `VoiceTransactionController.php`) dijaga agar seminimal mungkin. Controller hanya bertugas menangani Request dan memberikan tanggapan HTTP (Response/Redirect).
+*   **Service Pattern:** Seluruh logika bisnis (*business logic*) dan kalkulasi algoritma (termasuk resolusi ke Database ID) dialihkan ke **Service Layer** di folder `app/Services/` (contoh: `VoiceTransactionService.php`).
 
-## 🛠️ Setup Instructions
+### 3. AI Engine Layer (FastAPI Python)
+Berjalan sebagai *local server* independen di *Port* `8000`. Laravel berkomunikasi dengan engine ini secara HTTP (Cepat & Stabil tanpa *cold-boot*).
+*   **Offline Transcribe:** Menggunakan **Faster Whisper** model "small" untuk mentranskripsi suara (Sunda/Indonesia) ke teks via endpoint `/transcribe-upload`.
+*   **Verification:** Modul *ECAPA-TDNN* tetap berdiri di sini yang dapat dipanggil saat registrasi suara atau verifikasi.
+
+---
+
+## 🛠️ Developer Setup Instructions
 
 ### Prerequisites
-
 - PHP 8.2+
-- Composer
+- Composer & NPM (Vite)
 - Python 3.10 - 3.13
-- FFmpeg (must be in system PATH)
+- FFmpeg (Terinstall dan terdaftar dalam **System PATH**)
 
-### Python Environment
-
-1. Navigate to the project root.
-2. Run the setup script:
-    ```powershell
-    ./scripts/setup.ps1
-    ```
-    _This creates a `.venv`, upgrades pip, and installs requirements from `requirements.txt`._
-
-### Configuration
-
-Verify your `config/voice.php`:
-
-```php
-'python_path' => base_path('.venv/Scripts/python.exe'),
-'script_path' => base_path('scripts/voice_processor_ecapa.py'),
-```
-
-## 🧪 Testing
-
-Run unit and integration tests:
-
+### 1. PHP & JS Environment
 ```bash
-php artisan test
+# Terminal 1 - Background Build
+composer install
+npm install
+npm run dev
 ```
 
-Integration tests require the Python environment to be correctly setup as they run the actual scripts.
+### 2. Microservice Environment (FastAPI)
+Buka terminal baru di root folder:
+```powershell
+# Buka folder script dan seting Python Virtual Environment
+cd scripts
+python -m venv .venv
 
-## 📝 Key Files
+# Aktivasi Venv
+# Windows:
+.venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
 
-- **Bridge**: `app/Services/VoiceProcessorService.php`
-- **DTO**: `app/DTOs/VoiceVerificationResult.php`
-- **Engine**: `scripts/voice_processor_ecapa.py`
-- **Anti-Spoofing**: `scripts/anti_spoofing.py`
+# Install Semua Dependency
+pip install -r ../requirements-fastapi.txt
+pip install faster-whisper
+```
 
-## 🛡️ Security Levels
+### 3. Konektivitas Service 
+Setiap kali mendevelop sistem Voice, Anda **WAJIB** menyalakan API Python secara manual via skrip:
+```powershell
+# Windows
+scripts\start-fastapi.bat
 
-- **Standard**: Password only.
-- **2-Layer Secure**: Anti-Spoofing + Voice Match.
-- **3-Layer Secure**: Text Challenge + Anti-Spoofing + Voice Match.
+# Linux/Mac
+cd scripts
+../scripts/.venv/bin/uvicorn api_server:app --port 8000
+```
+> Biarkan layar terminal tersebut terbuka di latar belakang. Semua request STT dari Laravel akan diarahkan ke `127.0.0.1:8000/transcribe-upload`.
+
+---
+
+## 🐞 Error Handling / Gotchas
+
+1. **"FFmpeg conversion failed / proc stderr"**
+   - **Sebab:** Browser mengirim audio berektensi WebM/OGG. Whisper butuh format `.wav`. FastAPI mengeksekusi subprocess `ffmpeg` mengubah WebM -> Wav. 
+   - **Solusi:** FFmpeg tidak terbaca di Environment Variable/PATH PC Anda. Tambahkan `C:\ffmpeg\bin` ke Path System.
+2. **Memory Leak di Faster Whisper**
+   - **Sebab:** Menggunakan tipe float32/fp16.
+   - **Solusi:** `api_server.py` secara sengaja di-*lock* untuk menggunakan `compute_type="int8"` untuk menghemat RAM dev environment Anda (di bawah 1 GB RAM AI load). Jangan diubah ke Float32 bila PC dev Anda memorinya terbatas.
+3. **Linter Error "Undefined method 'id'." di Controllers**
+   - **Sebab:** Anda mungkin meniru gaya *coding* lama `auth()->id()`.
+   - **Solusi:** Gunakan facade Laravel modern `Illuminate\Support\Facades\Auth;` lalu panggil `Auth::id()`.

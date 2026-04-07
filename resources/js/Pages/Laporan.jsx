@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Head, router } from '@inertiajs/react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Head } from '@inertiajs/react';
 import AuthLayout from '../Layouts/AuthLayout';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ArrowDownTrayIcon as Download, 
     FunnelIcon as Filter, 
@@ -9,25 +8,22 @@ import {
     ArrowUpCircleIcon as ArrowUpCircle, 
     ArrowDownCircleIcon as ArrowDownCircle, 
     WalletIcon as Wallet,
-    CalendarIcon as Calendar,
-    ChevronDownIcon as ChevronDown,
+    ChevronLeftIcon,
+    ChevronRightIcon,
     DocumentTextIcon as FileText
 } from '@heroicons/react/24/solid';
 import TrendChart from '../Components/Laporan/TrendChart';
 import CategoryChart from '../Components/Laporan/CategoryChart';
 
+const ROWS_PER_PAGE = 20;
+
+/**
+ * SummaryCard — CSS hover, tidak pakai framer-motion (dirender 3x = masih ok tapi tetap hemat)
+ */
 const SummaryCard = ({ title, amount, icon: Icon, color }) => (
-    <motion.div 
-        variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 }
-        }}
-        whileHover={{ scale: 1.02, y: -5 }}
-        className="relative group bg-white/40 backdrop-blur-xl p-7 rounded-[32px] border border-white/40 shadow-sm flex items-center gap-6 overflow-hidden"
-    >
+    <div className="relative group bg-white/40 backdrop-blur-xl p-7 rounded-[32px] border border-white/40 shadow-sm flex items-center gap-6 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
         <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${color.split(' ')[0]}`} />
-        
-            <Icon className="w-7 h-7" />
+        <Icon className="w-7 h-7 relative z-10" />
         <div className="relative z-10">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{title}</p>
             <h3 className="text-2xl font-bold font-outfit text-slate-900 tracking-tight">
@@ -35,10 +31,8 @@ const SummaryCard = ({ title, amount, icon: Icon, color }) => (
                 {new Intl.NumberFormat('id-ID').format(amount)}
             </h3>
         </div>
-    </motion.div>
+    </div>
 );
-
-const COLORS = ['#0d9488', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#f59e0b'];
 
 export default function Laporan({ years }) {
     const today = new Date();
@@ -58,6 +52,15 @@ export default function Laporan({ years }) {
         saldo_akhir: 0
     });
 
+    // ─── Pagination state ──────────────────────────────────────────
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(transactions.length / ROWS_PER_PAGE);
+    const paginatedTransactions = transactions.slice(
+        (currentPage - 1) * ROWS_PER_PAGE,
+        currentPage * ROWS_PER_PAGE
+    );
+
     const months = [
         { id: 1, name: 'Januari' }, { id: 2, name: 'Februari' }, { id: 3, name: 'Maret' },
         { id: 4, name: 'April' }, { id: 5, name: 'Mei' }, { id: 6, name: 'Juni' },
@@ -65,8 +68,9 @@ export default function Laporan({ years }) {
         { id: 10, name: 'Oktober' }, { id: 11, name: 'November' }, { id: 12, name: 'Desember' }
     ];
 
-    const fetchLaporan = async () => {
+    const fetchLaporan = useCallback(async () => {
         setLoading(true);
+        setCurrentPage(1); // Reset ke halaman 1 setiap fetch baru
         try {
             const response = await axios.get('/api/laporan/transactions', { params: filters });
             if (response.data.success) {
@@ -80,10 +84,11 @@ export default function Laporan({ years }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters]);
 
     useEffect(() => {
         fetchLaporan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleExport = () => {
@@ -97,37 +102,24 @@ export default function Laporan({ years }) {
 
             <div className="max-w-7xl mx-auto">
                 {/* Header Area */}
-                <motion.div 
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12"
-                >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12">
                     <div>
                         <h1 className="text-5xl font-bold font-outfit mb-3 tracking-tighter text-slate-900">Analisa Laporan</h1>
                         <p className="text-slate-500 font-medium">Pantau kesehatan finansial Anda melalui data transaksional yang akurat.</p>
                     </div>
-
                     <div className="flex flex-wrap items-center gap-4">
-                        <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                        <button 
                             onClick={handleExport}
-                            className="bg-slate-900 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-slate-800 transition-all shadow-2xl shadow-slate-900/40 group overflow-hidden relative"
+                            className="bg-slate-900 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-slate-800 transition-all duration-200 shadow-2xl shadow-slate-900/40 active:scale-95"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                            <Download className="w-[18px] h-[18px] relative z-10" />
-                            <span className="relative z-10">Unduh PDF</span>
-                        </motion.button>
+                            <Download className="w-[18px] h-[18px]" />
+                            <span>Unduh PDF</span>
+                        </button>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Filters Area */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white/40 backdrop-blur-xl p-8 rounded-[48px] border border-white/40 shadow-sm mb-12"
-                >
+                <div className="bg-white/40 backdrop-blur-xl p-8 rounded-[48px] border border-white/40 shadow-sm mb-12">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-10 h-10 bg-teal-500/10 rounded-xl flex items-center justify-center text-teal-600">
                             <Filter className="w-[18px] h-[18px]" />
@@ -157,7 +149,7 @@ export default function Laporan({ years }) {
                             </select>
                         </div>
                         <div className="hidden lg:flex items-center justify-center h-14 text-slate-300">
-                             <ArrowUpCircle className="w-6 h-6 rotate-90 opacity-40" />
+                            <ArrowUpCircle className="w-6 h-6 rotate-90 opacity-40" />
                         </div>
                         <div className="space-y-3">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sampai Bulan</label>
@@ -180,74 +172,40 @@ export default function Laporan({ years }) {
                                     {years.map(y => <option key={y} value={y}>{y}</option>)}
                                 </select>
                             </div>
-                            <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                            <button 
                                 onClick={fetchLaporan}
                                 disabled={loading}
-                                className="h-14 w-14 bg-teal-600 text-white rounded-2xl flex items-center justify-center hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/30 disabled:opacity-50"
+                                className="h-14 w-14 bg-teal-600 text-white rounded-2xl flex items-center justify-center hover:bg-teal-700 transition-all duration-200 shadow-xl shadow-teal-600/30 disabled:opacity-50 active:scale-95 self-end"
                             >
                                 <Search className="w-[22px] h-[22px]" />
-                            </motion.button>
+                            </button>
                         </div>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Chart Area */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-12">
-                    {/* Trend Chart */}
                     <TrendChart chartData={chartData} />
-
-                    {/* Distribution Chart */}
                     <CategoryChart categoryData={categoryData} totalPengeluaran={summary.total_pengeluaran} />
                 </div>
 
                 {/* Summary Grid */}
-                <motion.div 
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                        visible: {
-                            transition: {
-                                staggerChildren: 0.1
-                            }
-                        }
-                    }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"
-                >
-                    <SummaryCard 
-                        title="Pemasukan" 
-                        amount={summary.total_pemasukan} 
-                        icon={ArrowUpCircle} 
-                        color="bg-teal-500/10 text-teal-600" 
-                    />
-                    <SummaryCard 
-                        title="Pengeluaran" 
-                        amount={summary.total_pengeluaran} 
-                        icon={ArrowDownCircle} 
-                        color="bg-rose-500/10 text-rose-600" 
-                    />
-                    <SummaryCard 
-                        title="Saldo Akhir" 
-                        amount={summary.saldo_akhir} 
-                        icon={Wallet} 
-                        color="bg-slate-900 text-white" 
-                    />
-                </motion.div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <SummaryCard title="Pemasukan" amount={summary.total_pemasukan} icon={ArrowUpCircle} color="bg-teal-500/10 text-teal-600" />
+                    <SummaryCard title="Pengeluaran" amount={summary.total_pengeluaran} icon={ArrowDownCircle} color="bg-rose-500/10 text-rose-600" />
+                    <SummaryCard title="Saldo Akhir" amount={summary.saldo_akhir} icon={Wallet} color="bg-slate-900 text-white" />
+                </div>
 
-                {/* Transactions Table */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="bg-white/40 backdrop-blur-xl rounded-[48px] border border-white/40 shadow-sm overflow-hidden"
-                >
+                {/* Transactions Table with Pagination */}
+                <div className="bg-white/40 backdrop-blur-xl rounded-[48px] border border-white/40 shadow-sm overflow-hidden">
                     <div className="p-10 border-b border-white/40 flex items-center justify-between">
                         <div>
                             <h4 className="text-2xl font-bold font-outfit text-slate-900 tracking-tight">Financial History</h4>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Daftar transaksi dalam periode</p>
                         </div>
-                        <span className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] bg-teal-500/10 px-4 py-2 rounded-full border border-teal-500/10">{transactions.length} Entri Ditemukan</span>
+                        <span className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] bg-teal-500/10 px-4 py-2 rounded-full border border-teal-500/10">
+                            {transactions.length} Entri Ditemukan
+                        </span>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -271,14 +229,12 @@ export default function Laporan({ years }) {
                                             </div>
                                         </td>
                                     </tr>
-                                ) : transactions.length > 0 ? (
-                                    transactions.map((t, idx) => (
-                                        <motion.tr 
-                                            key={t.id} 
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.05 * idx }}
-                                            className="hover:bg-teal-50/30 transition-all group cursor-pointer"
+                                ) : paginatedTransactions.length > 0 ? (
+                                    // DOM hanya render ROWS_PER_PAGE (20) baris, bukan semua sekaligus
+                                    paginatedTransactions.map((t) => (
+                                        <tr 
+                                            key={t.id}
+                                            className="hover:bg-teal-50/30 transition-colors duration-150 group cursor-pointer"
                                         >
                                             <td className="px-10 py-6 text-sm font-bold text-slate-400">{t.tanggal}</td>
                                             <td className="px-10 py-6 text-sm font-bold text-slate-900 group-hover:text-teal-600 transition-colors tracking-tight">{t.keterangan}</td>
@@ -287,11 +243,11 @@ export default function Laporan({ years }) {
                                                     {t.kategori}
                                                 </span>
                                             </td>
-                                            <td className={`px-10 py-6 text-sm font-bold text-right font-outfit ${t.jenis === 'Pemasukan' ? 'text-teal-600' : 'text-slate-900 text-opacity-80'}`}>
+                                            <td className={`px-10 py-6 text-sm font-bold text-right font-outfit ${t.jenis === 'Pemasukan' ? 'text-teal-600' : 'text-slate-900'}`}>
                                                 {t.jenis === 'Pemasukan' ? '+' : '-'}{t.jumlah_formatted}
                                             </td>
                                             <td className="px-10 py-6 text-sm font-bold text-slate-900 text-right font-outfit">{t.saldo_formatted}</td>
-                                        </motion.tr>
+                                        </tr>
                                     ))
                                 ) : (
                                     <tr>
@@ -306,7 +262,60 @@ export default function Laporan({ years }) {
                             </tbody>
                         </table>
                     </div>
-                </motion.div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="px-10 py-6 border-t border-white/40 flex items-center justify-between">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                Halaman {currentPage} dari {totalPages} ({transactions.length} entri)
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-600 hover:bg-teal-600 hover:text-white hover:border-teal-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                                >
+                                    <ChevronLeftIcon className="w-4 h-4" />
+                                </button>
+
+                                {/* Page numbers */}
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                    .reduce((acc, p, idx, arr) => {
+                                        if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                                        acc.push(p);
+                                        return acc;
+                                    }, [])
+                                    .map((item, idx) => 
+                                        item === '...' ? (
+                                            <span key={`ellipsis-${idx}`} className="w-10 h-10 flex items-center justify-center text-slate-400 text-sm font-bold">...</span>
+                                        ) : (
+                                            <button
+                                                key={item}
+                                                onClick={() => setCurrentPage(item)}
+                                                className={`w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all duration-200 ${
+                                                    currentPage === item 
+                                                        ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' 
+                                                        : 'bg-white border border-slate-100 text-slate-600 hover:bg-teal-50 hover:border-teal-200'
+                                                }`}
+                                            >
+                                                {item}
+                                            </button>
+                                        )
+                                    )
+                                }
+
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-600 hover:bg-teal-600 hover:text-white hover:border-teal-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                                >
+                                    <ChevronRightIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </AuthLayout>
     );

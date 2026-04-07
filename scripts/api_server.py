@@ -1,10 +1,14 @@
 import sys
 import os
+import tempfile
+import subprocess
 import traceback
 from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
+from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
@@ -18,10 +22,24 @@ from voice_processor_ecapa import (
     verify_voice,
     verify_secure,
     verify_secure_with_challenge,
-    transcribe_audio,
     compare_files,
     DEVICE
 )
+
+# ── Faster Whisper (Offline STT) ─────────────────────────────────
+from faster_whisper import WhisperModel
+
+_whisper_model = None
+
+def get_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        print("Loading Faster Whisper model (small)...", file=sys.stderr)
+        # small = keseimbangan terbaik kecepatan & akurasi untuk Bahasa Indonesia
+        # int8 = hemat RAM, tidak butuh GPU
+        _whisper_model = WhisperModel("small", device="cpu", compute_type="int8")
+        print("\u2705 Faster Whisper loaded!", file=sys.stderr)
+    return _whisper_model
 
 # Optional: Load anti_spoofing detector at startup as well
 from anti_spoofing import get_detector
@@ -36,9 +54,11 @@ async def lifespan(app: FastAPI):
         get_verifier()
         # Pre-load AASIST Anti-Spoofing model
         get_detector()
-        print("✅ Models loaded successfully into memory!", file=sys.stderr)
+        # Pre-load Faster Whisper
+        get_whisper_model()
+        print("\u2705 All models loaded successfully into memory!", file=sys.stderr)
     except Exception as e:
-        print(f"❌ Failed to load models: {str(e)}", file=sys.stderr)
+        print(f"\u274c Failed to load models: {str(e)}", file=sys.stderr)
         traceback.print_exc()
         
     yield
@@ -48,9 +68,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Voica AI Processing Service", 
-    description="Microservice for Fast Voice Enrollment & Verification",
+    title="Voica AI Processing Service",
+    description="Microservice for Fast Voice Enrollment & Verification\n\nOffline STT via Google Speech Recognition (path-based) or Faster Whisper (upload-based).",
     lifespan=lifespan
+)
+
+# Allow requests from Laravel (localhost)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000", "http://127.0.0.1:80", "http://localhost"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 # --- Request Models ---
@@ -82,10 +110,15 @@ class TranscribeRequest(BaseModel):
 # --- Endpoints ---
 
 @app.get("/")
+@app.get("/health")
 def health_check():
     return {
-        "status": "online", 
+        "status": "ok",
         "device": DEVICE,
+        "models": {
+            "ecapa_tdnn": True,
+            "aasist": True,
+        },
         "message": "Models are loaded in RAM and ready for instant inference."
     }
 
@@ -131,12 +164,86 @@ def verify_with_challenge_endpoint(req: VerifyChallengeRequest):
 
 @app.post("/transcribe")
 def transcribe_endpoint(req: TranscribeRequest):
+    """Transcribe audio using file path (untuk backward compatibility dari PHP CLI calls)."""
     if not os.path.exists(req.audio_path):
         raise HTTPException(status_code=400, detail="Audio file not found")
         
     result = transcribe_audio(req.audio_path, req.language)
     return result
 
+
+@app.post("/transcribe-upload")
+async def transcribe_upload_endpoint(audio: UploadFile = File(...), language: str = "id"):
+    """
+    Transcribe audio blob dari browser MediaRecorder menggunakan Faster Whisper (100% Offline).
+    
+    Bahasa Indonesia ('id') dipilih sebagai default karena:
+    - Whisper tidak punya kode bahasa Sunda ('su')
+    - Namun model 'small'/'medium' cukup mampu menangkap kata-kata Sunda Priangan
+      yang bunyinya mirip Indonesia (contoh: 'sampun', 'abdi', 'kanggo', dll.)
+    - Kata kunci navigasi & transaksi di-handle oleh NLP parser di Layer berikutnya
+    
+    Proses: Upload -> FFmpeg convert ke WAV 16kHz -> Faster Whisper -> JSON
+    """
+    tmp_orig_path = None
+    tmp_wav_path = None
+    try:
+        # 1. Simpan blob ke temp file
+        suffix = Path(audio.filename).suffix if audio.filename else ".webm"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_orig:
+            content = await audio.read()
+            tmp_orig.write(content)
+            tmp_orig_path = tmp_orig.name
+
+        # 2. Convert ke WAV PCM 16kHz Mono via FFmpeg
+        tmp_wav_path = tmp_orig_path + ".wav"
+        ffmpeg_cmd = [
+            "ffmpeg", "-y", "-i", tmp_orig_path,
+            "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+            tmp_wav_path
+        ]
+        print(f"Converting {tmp_orig_path} to {tmp_wav_path}...", file=sys.stderr)
+        proc = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            return {"success": False, "error": f"FFmpeg gagal: {proc.stderr}"}
+
+        # 3. Faster Whisper transcription (100% offline, no internet)
+        whisper = get_whisper_model()
+        
+        # Gunakan 'id' untuk Indonesia + Sunda Priangan.
+        # 'language=None' = auto-detect (lebih lambat tapi lebih fleksibel).
+        lang = language if language in ["id", "en", "jv"] else "id"
+        
+        segments, info = whisper.transcribe(
+            tmp_wav_path,
+            language=lang,
+            beam_size=5,
+            vad_filter=True,          # Filter silence otomatis
+            vad_parameters=dict(min_silence_duration_ms=300)
+        )
+        
+        transcript = " ".join(seg.text.strip() for seg in segments).strip()
+        
+        print(f"[Whisper] Detected lang: {info.language} | Transcript: '{transcript}'", file=sys.stderr)
+        
+        if not transcript:
+            return {"success": False, "error": "Suara tidak terdeteksi. Coba ucapkan lebih jelas."}
+        
+        return {
+            "success": True,
+            "transcript": transcript,
+            "language": info.language,
+            "language_probability": round(info.language_probability, 3)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+    finally:
+        if tmp_orig_path and os.path.exists(tmp_orig_path):
+            os.unlink(tmp_orig_path)
+        if tmp_wav_path and os.path.exists(tmp_wav_path):
+            os.unlink(tmp_wav_path)
+
+
 if __name__ == "__main__":
-    # Allows running script directly with 'python api_server.py'
-    uvicorn.run("api_server:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("api_server:app", host="127.0.0.1", port=8001, reload=True)

@@ -70,9 +70,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/voice-process', [App\Http\Controllers\VoiceTransactionController::class, 'process'])
         ->name('voice.process');
 
-    // NEW: Parse voice text (Web Speech API)
+    // NEW: Parse voice text (NLP parser)
     Route::post('/api/parse-voice-text', [App\Http\Controllers\VoiceTransactionController::class, 'parseVoiceText'])
         ->name('voice.parse.text');
+
+    // NEW: Transcribe audio via FastAPI Faster Whisper (offline STT, menggantikan Google Web Speech API)
+    Route::post('/api/voice/transcribe', [App\Http\Controllers\VoiceTransactionController::class, 'transcribeAudio'])
+        ->name('voice.transcribe');
 
     Route::get('/api/budgets', [App\Http\Controllers\VoiceTransactionController::class, 'getBudgets'])
         ->name('api.budgets');

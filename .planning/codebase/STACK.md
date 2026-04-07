@@ -1,29 +1,18 @@
-# Technology Stack
+# Tech Stack
 
-## Core
+## Core Technologies
+- **Backend:** Laravel (PHP)
+- **Frontend SPA:** React with Inertia.js
+- **Styling:** Tailwind CSS + Heroicons (Solid style)
+- **AI/Voice Service:** Python via FastAPI (served locally on port 8000)
 
-- **PHP**: ^8.2 (Laravel ^12.0)
-- **JavaScript**: React ^19.2 (Inertia.js ^2.0)
-- **Python**: Used for voice processing scripts in `scripts/`.
-- **Styling**: Tailwind CSS ^4.0.0.
+## AI / Machine Learning Models
+- **Speaker Verification:** ECAPA-TDNN (for voice enrollment and matching)
+- **Anti-Spoofing:** AASIST (for detecting spoofed/synthetic audio)
+- **Speech-to-Text (STT):** Faster Whisper (`small` model with `int8` quantization)
 
-## Backend Dependencies
+## System Dependencies
+- **FFmpeg:** Required on the host system to process audio sent from browser (WebM/OGG to WAV PCM 16kHz) as required by STT engines.
 
-- **Filament**: ^4.2 (Admin panel/Forms)
-- **Inertia Laravel**: ^2.0
-- **Barryvdh Laravel-dompdf**: ^3.1
-- **Doctrine DBAL**: ^4.4
-- **Laravel Tinker**: ^2.10.1
-
-## Frontend Dependencies
-
-- **Radix UI/Lucide React**: For UI components.
-- **Framer Motion**: Animation.
-- **Recharts**: Data visualization.
-- **Axios**: HTTP client.
-
-## Development Tools
-
-- **Vite**: ^7.0.7
-- **PHPUnit**: ^11.5.3
-- **Laravel Pail/Pint**: Local logging and formatting.
+## Database
+- SQLite (based on `.env` configuration)
