@@ -56,7 +56,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install Semua Dependency
-pip install -r ../requirements-fastapi.txt
+pip install -r ../requirements.txt
 pip install faster-whisper
 ```
 
