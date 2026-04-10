@@ -67,7 +67,7 @@ class VoiceTransactionService
      */
     public function transcribeAudio($audioFile): array
     {
-        $fastapiUrl = rtrim(config('voice.api_url', 'http://127.0.0.1:8001'), '/');
+        $fastapiUrl = rtrim(config('voice.api_url', 'http://127.0.0.1:8026'), '/');
 
         try {
             /** @var \Illuminate\Http\Client\Response $response */
