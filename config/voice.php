@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'api_url' => env('VOICE_API_URL', 'http://127.0.0.1:8001'),
+    'api_url' => env('VOICE_API_URL', 'http://127.0.0.1:8026'),
 
     'ffmpeg_path' => env('FFMPEG_PATH', 'ffmpeg'),
 
