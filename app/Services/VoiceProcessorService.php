@@ -17,7 +17,7 @@ class VoiceProcessorService
      */
     public function execute(string $command, array $args): \App\DTOs\VoiceVerificationResult
     {
-        $apiUrl = rtrim(config('voice.api_url', 'http://127.0.0.1:8001'), '/');
+        $apiUrl = rtrim(config('voice.api_url', 'http://127.0.0.1:8026'), '/');
         $timeout = config('voice.timeout', 60);
 
         // Map command strings to actual API endpoints and request bodies
