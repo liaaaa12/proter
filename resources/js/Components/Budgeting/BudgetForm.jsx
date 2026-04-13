@@ -3,22 +3,44 @@ import { useForm } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon as X, CheckIcon as Save } from '@heroicons/react/24/solid';
 
-export default function BudgetForm({ isFormOpen, setIsFormOpen, periode }) {
-    const { data, setData, post, processing, reset, errors } = useForm({
+export default function BudgetForm({ isFormOpen, setIsFormOpen, periode, editData, setEditData }) {
+    const { data, setData, post, put, processing, reset, errors } = useForm({
         namaBudget: '',
         kategori: 'Lainnya',
         jumlah: '',
         periode: periode,
     });
 
+    React.useEffect(() => {
+        if (editData) {
+            setData({
+                namaBudget: editData.namaBudget,
+                kategori: editData.kategori,
+                jumlah: editData.jumlah,
+                periode: editData.periode,
+            });
+        } else {
+            reset();
+        }
+    }, [editData, isFormOpen]);
+
+    const closeForm = () => {
+        setIsFormOpen(false);
+        if (setEditData) setEditData(null);
+        reset();
+    };
+
     const submit = (e) => {
         e.preventDefault();
-        post('/api/budget', {
-            onSuccess: () => {
-                setIsFormOpen(false);
-                reset();
-            },
-        });
+        if (editData) {
+            put(`/api/budget/${editData.id}`, {
+                onSuccess: () => closeForm(),
+            });
+        } else {
+            post('/api/budget', {
+                onSuccess: () => closeForm(),
+            });
+        }
     };
 
     const categories = [
@@ -34,7 +56,7 @@ export default function BudgetForm({ isFormOpen, setIsFormOpen, periode }) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={() => setIsFormOpen(false)}
+                        onClick={closeForm}
                         className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50"
                     />
                     <motion.div 
@@ -45,8 +67,8 @@ export default function BudgetForm({ isFormOpen, setIsFormOpen, periode }) {
                         className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 p-10 overflow-y-auto"
                     >
                         <div className="flex items-center justify-between mb-10">
-                            <h2 className="text-3xl font-bold font-outfit">Tambah Budget</h2>
-                            <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                            <h2 className="text-3xl font-bold font-outfit">{editData ? 'Edit Budget' : 'Tambah Budget'}</h2>
+                            <button onClick={closeForm} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -102,7 +124,7 @@ export default function BudgetForm({ isFormOpen, setIsFormOpen, periode }) {
                                     className="w-full h-16 bg-teal-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/20"
                                 >
                                     <Save className="w-[22px] h-[22px]" />
-                                    Simpan Anggaran
+                                    {editData ? 'Update Anggaran' : 'Simpan Anggaran'}
                                 </button>
                             </div>
                         </form>
