@@ -47,7 +47,7 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'numeric', 'digits_between:10,15', 'unique:users'],
             'password' => ['required', 'confirmed', Password::min(8)],
-            'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3', 'max:10240'],
+            'voice_audio_file' => ['nullable', 'file', 'mimes:wav,webm,ogg,mp3,mp4,m4a,aac,x-m4a', 'max:10240'],
             'voice_audio_base64' => ['nullable', 'string'],
         ], [
             'phone.unique' => 'Nomor telepon sudah terdaftar',

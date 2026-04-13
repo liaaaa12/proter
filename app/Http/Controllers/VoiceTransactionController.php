@@ -136,7 +136,7 @@ class VoiceTransactionController extends Controller
     {
         try {
             $request->validate([
-                'audio' => 'required|file|mimes:webm,wav,mp3,ogg,flac,m4a|max:20480',
+                'audio' => 'required|file|mimes:webm,wav,mp3,ogg,flac,m4a,mp4,aac,x-m4a|max:20480',
             ]);
 
             $result = $this->voiceTransactionService->transcribeAudio($request->file('audio'));

@@ -63,7 +63,8 @@ class VoiceLockController extends Controller
     public function verify(Request $request)
     {
         $request->validate([
-            'voice_audio' => 'required|file|mimes:webm,wav,mp3,ogg',
+            'voice_audio' => 'required|file|mimes:webm,wav,mp3,ogg,mp4,m4a,aac,x-m4a',
+            'challenge_text' => 'required|string',
         ]);
 
         $user = Auth::user();

@@ -3,22 +3,44 @@ import { useForm } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon as X, CheckIcon as Save, ExclamationCircleIcon as AlertCircle } from '@heroicons/react/24/solid';
 
-export default function GoalForm({ isFormOpen, setIsFormOpen }) {
-    const { data, setData, post, processing, reset, errors } = useForm({
+export default function GoalForm({ isFormOpen, setIsFormOpen, editData, setEditData }) {
+    const { data, setData, post, put, processing, reset, errors } = useForm({
         namaGoal: '',
         targetNominal: '',
         nominalBerjalan: 0,
         tanggalTarget: '',
     });
 
+    React.useEffect(() => {
+        if (editData) {
+            setData({
+                namaGoal: editData.namaGoal,
+                targetNominal: editData.targetNominal,
+                nominalBerjalan: editData.nominalBerjalan,
+                tanggalTarget: editData.tanggalTarget,
+            });
+        } else {
+            reset();
+        }
+    }, [editData, isFormOpen]);
+
+    const closeForm = () => {
+        setIsFormOpen(false);
+        if (setEditData) setEditData(null);
+        reset();
+    };
+
     const submit = (e) => {
         e.preventDefault();
-        post('/goals', {
-            onSuccess: () => {
-                setIsFormOpen(false);
-                reset();
-            },
-        });
+        if (editData) {
+            put(`/goals/${editData.id}`, {
+                onSuccess: () => closeForm(),
+            });
+        } else {
+            post('/goals', {
+                onSuccess: () => closeForm(),
+            });
+        }
     };
 
     return (
@@ -29,7 +51,7 @@ export default function GoalForm({ isFormOpen, setIsFormOpen }) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={() => setIsFormOpen(false)}
+                        onClick={closeForm}
                         className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                     />
                     <motion.div 
@@ -40,10 +62,10 @@ export default function GoalForm({ isFormOpen, setIsFormOpen }) {
                     >
                         <div className="p-8 md:p-10 border-b border-slate-50 flex items-center justify-between">
                             <div>
-                                <h3 className="text-2xl font-bold font-outfit">Target Baru</h3>
+                                <h3 className="text-2xl font-bold font-outfit">{editData ? 'Edit Target' : 'Target Baru'}</h3>
                                 <p className="text-slate-400 font-medium text-sm">Rencanakan kesuksesan Anda hari ini.</p>
                             </div>
-                            <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                            <button onClick={closeForm} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -100,7 +122,7 @@ export default function GoalForm({ isFormOpen, setIsFormOpen }) {
                                     className="w-full h-16 bg-teal-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/20"
                                 >
                                     <Save className="w-5 h-5" />
-                                    Mulai Target
+                                    {editData ? 'Update Target' : 'Mulai Target'}
                                 </button>
                             </div>
                         </form>

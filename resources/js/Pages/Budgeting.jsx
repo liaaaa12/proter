@@ -7,14 +7,14 @@ import {
     PlusIcon as Plus, 
     CalendarIcon as Calendar, 
     ChevronRightIcon as ChevronRight, 
-    EllipsisHorizontalIcon as MoreHorizontal, 
+    PencilSquareIcon as EditIcon, 
     ArrowUpCircleIcon as ArrowUpCircle,
     ArrowDownCircleIcon as ArrowDownCircle,
     BanknotesIcon as PiggyBank
 } from '@heroicons/react/24/solid';
 import BudgetForm from '../Components/Budgeting/BudgetForm';
 
-const BudgetCard = ({ budget }) => {
+const BudgetCard = ({ budget, onEdit }) => {
     const isWarning = budget.persentase > 80;
     const isDanger = budget.persentase >= 100;
 
@@ -44,8 +44,9 @@ const BudgetCard = ({ budget }) => {
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{budget.kategori}</p>
                     </div>
                 </div>
-                <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all">
-                    <MoreHorizontal className="w-5 h-5" />
+                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(budget); }} className="p-2 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-full transition-all z-20 flex items-center gap-1 px-3">
+                    <EditIcon className="w-4 h-4" />
+                    <span className="text-xs font-bold">Edit</span>
                 </button>
             </div>
 
@@ -89,6 +90,17 @@ const BudgetCard = ({ budget }) => {
 
 export default function Budgeting({ budgetsWithProgress, periode, allBudgets, goals }) {
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editData, setEditData] = useState(null);
+
+    const handleEdit = (budget) => {
+        setEditData(budget);
+        setIsFormOpen(true);
+    };
+
+    const handleOpenForm = () => {
+        setEditData(null);
+        setIsFormOpen(true);
+    };
 
     return (
         <AuthLayout>
@@ -119,7 +131,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                         <motion.button 
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsFormOpen(true)}
+                            onClick={handleOpenForm}
                             className="h-14 px-8 bg-teal-600 text-white rounded-2xl flex items-center justify-center gap-3 font-bold shadow-xl shadow-teal-600/30 hover:bg-teal-700 transition-all"
                         >
                             <Plus className="w-5 h-5" />
@@ -193,7 +205,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                     >
                         {budgetsWithProgress.map((budget) => (
-                            <BudgetCard key={budget.id} budget={budget} />
+                            <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} />
                         ))}
                     </motion.div>
                 ) : (
@@ -204,7 +216,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Belum Ada Anggaran</h3>
                         <p className="text-slate-500 max-w-sm mx-auto mb-8">Anda belum memiliki rencana pengeluaran untuk periode ini. Mulai kelola uang Anda sekarang.</p>
                         <button 
-                            onClick={() => setIsFormOpen(true)}
+                            onClick={handleOpenForm}
                             className="px-8 py-4 bg-teal-600 text-white rounded-2xl font-bold shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition-all"
                         >
                             Buat Anggaran Pertama
@@ -214,7 +226,7 @@ export default function Budgeting({ budgetsWithProgress, periode, allBudgets, go
             </div>
 
             {/* Slide-over Form Overlay */}
-            <BudgetForm isFormOpen={isFormOpen} setIsFormOpen={setIsFormOpen} periode={periode} />
+            <BudgetForm isFormOpen={isFormOpen} setIsFormOpen={setIsFormOpen} periode={periode} editData={editData} setEditData={setEditData} />
         </AuthLayout>
     );
 }
