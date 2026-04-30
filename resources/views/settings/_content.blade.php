@@ -57,6 +57,18 @@
         </div>
     </form>
 
+    <!-- Manual Book Section -->
+    <hr style="margin: 40px 0; border: none; border-top: 2px solid #E3F5FF;">
+    
+    <div class="manual-book-section" style="text-align: center; padding: 20px; background: #F0F9FF; border-radius: 15px; border: 2px solid #00456A;">
+        <h2 style="color: #00456A; margin-bottom: 15px;">📖 Buku Panduan</h2>
+        <p style="color: #666; margin-bottom: 20px;">Unduh buku panduan untuk mempelajari cara menggunakan aplikasi VOICA.</p>
+        
+        <a href="{{ asset('Manual Book VOICA.pdf') }}" target="_blank" download="Manual Book VOICA.pdf" class="btn" style="background: #00456A; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 30px; border-radius: 100px; font-weight: bold; transition: all 0.3s; font-size: 16px;">
+            ⬇️ Download PDF
+        </a>
+    </div>
+
     <!-- Logout Section -->
     <hr style="margin: 40px 0; border: none; border-top: 2px solid #E3F5FF;">
     
@@ -165,16 +177,16 @@
             margin-bottom: 15px !important;
         }
 
-        .logout-section {
+        .logout-section, .manual-book-section {
             padding: 15px !important;
             margin-top: 20px !important;
         }
 
-        .logout-section h2 {
+        .logout-section h2, .manual-book-section h2 {
             font-size: 16px !important;
         }
 
-        .logout-section p {
+        .logout-section p, .manual-book-section p {
             font-size: 13px !important;
             margin-bottom: 15px !important;
         }

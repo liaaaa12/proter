@@ -47,7 +47,7 @@ class VoiceProcessorService
                     $payload = [
                         'test_audio_path' => $args[0],
                         'enrolled_embedding' => is_string($args[1]) ? json_decode($args[1], true) : $args[1],
-                        'threshold' => isset($args[2]) ? (float)$args[2] : 0.70
+                        'threshold' => isset($args[2]) ? (float)$args[2] : 0.35
                     ];
                     break;
 
@@ -57,7 +57,7 @@ class VoiceProcessorService
                         'test_audio_path' => $args[0],
                         'enrolled_embedding' => is_string($args[1]) ? json_decode($args[1], true) : $args[1],
                         'expected_text' => $args[2],
-                        'threshold' => isset($args[3]) ? (float)$args[3] : 0.70
+                        'threshold' => isset($args[3]) ? (float)$args[3] : 0.35
                     ];
                     break;
 

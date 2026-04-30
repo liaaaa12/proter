@@ -192,6 +192,26 @@ export default function Settings({ user }) {
                         </motion.button>
                     </motion.div>
 
+                    {/* Manual Book Section */}
+                    <motion.div 
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0 }
+                        }}
+                        className="mt-12 bg-teal-500/10 border border-teal-500/20 rounded-[32px] p-8 text-center"
+                    >
+                        <h3 className="text-xl font-bold font-outfit mb-2 text-teal-800">📖 Buku Panduan VOICA</h3>
+                        <p className="text-teal-600/80 mb-6 font-medium">Unduh buku panduan untuk mempelajari cara menggunakan aplikasi secara optimal.</p>
+                        <a 
+                            href="/Manual%20Book%20VOICA.pdf" 
+                            target="_blank" 
+                            download="Manual Book VOICA.pdf"
+                            className="inline-flex h-16 px-12 bg-teal-600 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] items-center justify-center gap-3 hover:bg-teal-700 transition-all shadow-xl shadow-teal-600/30"
+                        >
+                            ⬇️ Download PDF
+                        </a>
+                    </motion.div>
+
                     {/* Logout Section */}
                     <motion.div 
                         variants={{
