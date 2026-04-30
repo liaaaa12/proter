@@ -41,6 +41,11 @@
             <div class="menu-item-icon">⚙️</div>
             <span>Pengaturan</span>
         </a>
+
+        <a href="{{ asset('Manual Book VOICA.pdf') }}" target="_blank" download="Manual Book VOICA.pdf" class="menu-item">
+            <div class="menu-item-icon">📖</div>
+            <span>Buku Panduan</span>
+        </a>
     </div>
 
     <div class="main-content" id="main-content">

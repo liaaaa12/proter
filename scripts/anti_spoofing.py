@@ -124,14 +124,14 @@ class AntiSpoofingDetector:
             
             with torch.no_grad():
                 # AASIST output: (last_hidden, output)
-                # output shape: [batch, 2] where index 0 = bonafide, 1 = spoof
+                # output shape: [batch, 2] where index 0 = spoof, 1 = bonafide
                 _, output = self.model(waveform)
                 
                 # Apply softmax to get probabilities
                 probs = torch.softmax(output, dim=1)
                 
-                bonafide_prob = probs[0, 0].item()
-                spoof_prob = probs[0, 1].item()
+                spoof_prob = probs[0, 0].item()
+                bonafide_prob = probs[0, 1].item()
             
             # Threshold for bonafide detection
             # 

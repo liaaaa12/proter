@@ -94,13 +94,13 @@ class VerifyRequest(BaseModel):
 class VerifySecureRequest(BaseModel):
     test_audio_path: str
     enrolled_embedding: List[float]
-    threshold: float = 0.70
+    threshold: float = 0.35
 
 class VerifyChallengeRequest(BaseModel):
     test_audio_path: str
     enrolled_embedding: List[float]
     expected_text: str
-    threshold: float = 0.70
+    threshold: float = 0.35
 
 class TranscribeRequest(BaseModel):
     audio_path: str

@@ -15,10 +15,10 @@ class AdaptiveThresholdService
     /**
      * Threshold defaults
      */
-    const THRESHOLD_RELAXED = 0.40;    // 70%   - Untuk re-verify dalam 10 menit
-    const THRESHOLD_STANDARD = 0.50;   // 75%   - Default
-    const THRESHOLD_HIGH = 0.60;       // 80%   - Transaksi besar
-    const THRESHOLD_STRICT = 0.65;     // 82.5% - Transaksi sangat besar / high risk
+    const THRESHOLD_RELAXED = 0.25;    // 62.5% - Untuk re-verify dalam 10 menit
+    const THRESHOLD_STANDARD = 0.35;   // 67.5% - Default (Evaluated Optimal EER)
+    const THRESHOLD_HIGH = 0.45;       // 72.5% - Transaksi besar
+    const THRESHOLD_STRICT = 0.55;     // 77.5% - Transaksi sangat besar / high risk
 
     /**
      * Amount thresholds (dalam Rupiah)

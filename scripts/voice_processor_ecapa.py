@@ -312,7 +312,7 @@ def verify_secure_with_challenge(
     test_audio_path: str, 
     enrolled_embedding: list, 
     expected_text: str = None,
-    base_threshold: float = 0.70
+    base_threshold: float = 0.35
 ) -> dict:
     """
     3-LAYER SECURE VERIFICATION:
@@ -433,16 +433,16 @@ def verify_secure_with_challenge(
         }
 
 
-def verify_secure(test_audio_path: str, enrolled_embedding: list, base_threshold: float = 0.70) -> dict:
+def verify_secure(test_audio_path: str, enrolled_embedding: list, base_threshold: float = 0.35) -> dict:
     """
     SECURE 2-LAYER VERIFICATION (ADAPTIVE):
     Layer 1: Anti-spoofing check (AASIST)
     Layer 2: Speaker verification (ECAPA-TDNN)
     
     ADAPTIVE LOGIC:
-    - If AASIST > 50%: Standard Security (uses base_threshold from PHP)
-    - If AASIST 0.5-50%: High Security (base_threshold + 0.10) - "Grey Zone"
-    - If AASIST < 15%: BLOCKED (Spoof detected)
+    - If AASIST > 89%: Standard Security (uses base_threshold from PHP)
+    - If AASIST 8.75-89%: High Security (base_threshold + 0.10) - "Grey Zone"
+    - If AASIST < 8.75%: BLOCKED (Spoof detected)
     """
     try:
         # Import anti-spoofing module
@@ -469,18 +469,18 @@ def verify_secure(test_audio_path: str, enrolled_embedding: list, base_threshold
         security_level = "standard"
         is_spoof_blocked = False
         
-        if bonafide_prob >= 50:
+        if bonafide_prob >= 89.0:
             # ZONE 1: SAFE (High Confidence Bonafide)
             # Only HD studio quality or very clean mic passes here.
             print(f"Layer 1: SAFE (Bonafide: {bonafide_prob}%) -> Standard Threshold ({base_threshold})", file=sys.stderr)
             security_level = "standard"
             current_threshold = base_threshold  # Use PHP threshold as-is
             
-        elif bonafide_prob >= 0.5:
+        elif bonafide_prob >= 8.75:
             # ZONE 2: GREY (Review Mode - Risk Based Auth)
             # Includes:
-            # - Real User on Web Mic (~1.96%)
-            # - Replay Attacks (~37%)
+            # - Real User on Web Mic
+            # - Replay Attacks
             # Apply a stricter threshold (+0.10) but still respect PHP's base.
             grey_threshold = min(base_threshold + 0.10, 0.85)  # Cap at 0.85 max
             print(f"Layer 1: GREY ZONE (Bonafide: {bonafide_prob}%) -> Elevated Threshold ({grey_threshold})", file=sys.stderr)
@@ -608,7 +608,7 @@ def main():
             if len(sys.argv) < 4:
                 raise ValueError('Test audio path and enrolled embedding required')
             enrolled_embedding = json.loads(sys.argv[3])
-            threshold = float(sys.argv[4]) if len(sys.argv) > 4 else 0.70
+            threshold = float(sys.argv[4]) if len(sys.argv) > 4 else 0.35
             result = verify_secure(sys.argv[2], enrolled_embedding, threshold)
             print(json.dumps(result))
         
@@ -626,7 +626,7 @@ def main():
                 raise ValueError('Test audio path, enrolled embedding, and challenge text required')
             enrolled_embedding = json.loads(sys.argv[3])
             expected_text = sys.argv[4]
-            threshold = float(sys.argv[5]) if len(sys.argv) > 5 else 0.70
+            threshold = float(sys.argv[5]) if len(sys.argv) > 5 else 0.35
             result = verify_secure_with_challenge(sys.argv[2], enrolled_embedding, expected_text, threshold)
             print(json.dumps(result))
         

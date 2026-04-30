@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { ArrowRightOnRectangleIcon as LogOut } from '@heroicons/react/24/solid';
 import { MicrophoneIcon as MicOff } from '@heroicons/react/24/outline';
-import { MicrophoneIcon as Mic } from '@heroicons/react/24/solid';
+import { MicrophoneIcon as Mic, BookOpenIcon as BookOpen } from '@heroicons/react/24/solid';
 
 const SidebarItem = ({ href, icon: Icon, label, active }) => (
     <Link 
@@ -32,6 +32,15 @@ export default function Sidebar({ auth, url, menuItems, voiceProps }) {
                 {menuItems.map((item) => (
                     <SidebarItem key={item.href} {...item} active={url.startsWith(item.href)} />
                 ))}
+                
+                <a 
+                    href="/Manual%20Book%20VOICA.pdf"
+                    target="_blank"
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900 mt-2"
+                >
+                    <BookOpen className="w-[22px] h-[22px]" />
+                    <span className="font-semibold">Buku Panduan</span>
+                </a>
             </nav>
 
             {/* Desktop Voice Button */}
