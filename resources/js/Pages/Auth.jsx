@@ -11,6 +11,10 @@ export default function Auth({ mode = 'login', status: propStatus }) {
     const status = propStatus || sessionStatus;
     
     const [authMode, setAuthMode] = useState(mode);
+    
+    useEffect(() => {
+        setAuthMode(mode);
+    }, [mode]);
     const [isVoiceLogin, setIsVoiceLogin] = useState(false);
     const [voiceStatus, setVoiceStatus] = useState('idle'); // idle, recording, processing, success, error
     
@@ -48,7 +52,15 @@ export default function Auth({ mode = 'login', status: propStatus }) {
         if (isVoiceLogin && authMode === 'login') {
             post('/voice-login');
         } else {
-            post(authMode === 'login' ? '/login' : '/register');
+            post(authMode === 'login' ? '/login' : '/register', {
+                onSuccess: () => {
+                    if (authMode === 'register') {
+                        setAuthMode('login');
+                        setIsVoiceLogin(false);
+                        // Data (no telepon, password, suara) tetap dipertahankan
+                    }
+                }
+            });
         }
     };
 
