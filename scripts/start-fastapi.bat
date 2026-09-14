@@ -1,4 +1,7 @@
 @echo off
+:: Add local FFmpeg to PATH
+set PATH=%~dp0..\ffmpeg\bin;%PATH%
+
 echo ============================================================
 echo  Voica AI Engine — Starting...
 echo ============================================================
@@ -25,6 +28,12 @@ echo ============================================================
 echo.
 
 cd /d "%~dp0.."
+
+if exist "scripts\.venv\Scripts\activate.bat" (
+    call scripts\.venv\Scripts\activate.bat
+) else if exist ".venv\Scripts\activate.bat" (
+    call .venv\Scripts\activate.bat
+)
 
 :: Check if uvicorn is installed
 python -c "import uvicorn" 2>NUL

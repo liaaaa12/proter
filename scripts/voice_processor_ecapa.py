@@ -97,6 +97,9 @@ class EcapaTdnnVerifier:
     
     def extract_embedding(self, audio_path: str) -> np.ndarray:
         """Extract speaker embedding from audio file using soundfile to avoid torchaudio backend issues"""
+        # Normalize path to avoid Windows backslash double-encoding issues (Errno 22)
+        from pathlib import Path
+        audio_path = str(Path(audio_path).resolve())
         try:
             import soundfile as sf
             data, fs = sf.read(audio_path)

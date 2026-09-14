@@ -34,9 +34,9 @@ class VoiceIntegrationTest extends TestCase
      */
     public function test_full_enrollment_and_verification_cycle()
     {
-        // Skip if Python is not configured or available (optional check)
-        if (!config('voice.python_path') || !file_exists(config('voice.script_path'))) {
-            $this->markTestSkipped('Python engine not configured.');
+        // Skip if API server URL is not configured
+        if (!config('voice.api_url')) {
+            $this->markTestSkipped('Voice API URL is not configured.');
         }
 
         $user = User::factory()->create();
@@ -48,24 +48,14 @@ class VoiceIntegrationTest extends TestCase
 
         // Let's test the ACTUAL script execution with a tiny sample
         $samplePath = base_path('tests/Samples/test_voice.wav');
-        if (!file_exists($samplePath)) {
-            // Create a very basic valid RIFF WAV header + silence
-            if (!is_dir(base_path('tests/Samples'))) {
-                mkdir(base_path('tests/Samples'), 0755, true);
-            }
-            // 1 second of silence 16k mono 16bit
-            $header = pack('NVCVNVCCVNNVVCV', 0x52494646, 36044, 0x57415645, 0x666d7420, 16, 1, 1, 16000, 32000, 2, 16, 0x64617461, 36000);
-            // This is a crude way, but for a "bridge test" it might suffice if the engine accepts it.
-            // Better: check if engine fails on too short audio.
-            file_put_contents($samplePath, $header . str_repeat("\0", 36000));
-        }
+        $this->createDummyWav($samplePath);
 
         // 2. Test Enrollment
         Log::info("Testing Enrollment Integration...");
         $enrollResult = $this->enrollmentService->enroll($user, $samplePath);
 
         $this->assertTrue($enrollResult->success, "Enrollment failed: " . ($enrollResult->error ?? 'Unknown error'));
-        $this->assertTrue($user->fresh()->is_voice_enrolled);
+        $this->assertTrue($user->fresh()->hasVoiceEnrolled());
         $this->assertNotNull($user->fresh()->voice_embedding);
 
         $storedPath = $user->fresh()->voice_path;
@@ -73,6 +63,8 @@ class VoiceIntegrationTest extends TestCase
 
         // 3. Test Verification (Self-match)
         Log::info("Testing Verification Integration...");
+        // Recreate the dummy WAV since the enrollment service cleans up the input file
+        $this->createDummyWav($samplePath);
         $verifyResult = $this->verificationService->verify($user, $samplePath, [
             'threshold' => 0.60 // Low threshold for synthetic silence
         ]);
@@ -81,5 +73,14 @@ class VoiceIntegrationTest extends TestCase
         // Even if match fails due to silence, success=true means bridge works.
 
         Log::info("Integration match result: " . ($verifyResult->isMatch ? 'MATCH' : 'NO MATCH'));
+    }
+
+    private function createDummyWav(string $path): void
+    {
+        if (!is_dir(dirname($path))) {
+            mkdir(dirname($path), 0755, true);
+        }
+        $header = pack('a4Va4a4VvvVVvva4V', 'RIFF', 36036, 'WAVE', 'fmt ', 16, 1, 1, 16000, 32000, 2, 16, 'data', 36000);
+        file_put_contents($path, $header . str_repeat("\0", 36000));
     }
 }

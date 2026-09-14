@@ -7,6 +7,14 @@ from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
+# ── Resolve FFmpeg path ───────────────────────────────────────────
+# Prefer the bundled ffmpeg in project root/ffmpeg/bin/ffmpeg.exe
+# Falls back to system 'ffmpeg' if the bundled binary isn't present.
+_PROJECT_DIR = Path(__file__).resolve().parent.parent
+_BUNDLED_FFMPEG = _PROJECT_DIR / "ffmpeg" / "bin" / "ffmpeg.exe"
+FFMPEG_BIN = str(_BUNDLED_FFMPEG) if _BUNDLED_FFMPEG.exists() else "ffmpeg"
+print(f"Using FFmpeg: {FFMPEG_BIN}", file=sys.stderr)
+
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -198,7 +206,7 @@ async def transcribe_upload_endpoint(audio: UploadFile = File(...), language: st
         # 2. Convert ke WAV PCM 16kHz Mono via FFmpeg
         tmp_wav_path = tmp_orig_path + ".wav"
         ffmpeg_cmd = [
-            "ffmpeg", "-y", "-i", tmp_orig_path,
+            FFMPEG_BIN, "-y", "-i", tmp_orig_path,
             "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
             tmp_wav_path
         ]

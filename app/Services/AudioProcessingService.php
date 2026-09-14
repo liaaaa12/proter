@@ -73,7 +73,9 @@ class AudioProcessingService
      */
     protected function convertToStandardWav(string $inputPath, int $sampleRate): string
     {
-        $outputPath = $inputPath . '_normalized.wav';
+        // Use forward slashes to prevent path double-encoding issues (Errno 22) on Windows
+        $outputPath = str_replace('\\', '/', $inputPath . '_normalized.wav');
+        $inputPath  = str_replace('\\', '/', $inputPath);
 
         // Command: ffmpeg -y -i input -ar 16000 -ac 1 output.wav
         // Use configured FFmpeg path (defaults to 'ffmpeg' in system PATH)
@@ -98,7 +100,9 @@ class AudioProcessingService
             // For safety in this brownfield, return the new path and let caller handle cleanup
             return $outputPath;
         } catch (\Exception $e) {
-            Log::error("FFmpeg conversion failed: " . $e->getMessage());
+            $errOutput = $process->getErrorOutput();
+            Log::error("FFmpeg conversion failed for [{$inputPath}]: " . $e->getMessage());
+            Log::error("FFmpeg stderr: " . $errOutput);
             return $inputPath; // Fallback to original
         }
     }

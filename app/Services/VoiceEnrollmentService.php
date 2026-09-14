@@ -24,6 +24,9 @@ class VoiceEnrollmentService
     public function enroll(User $user, string $audioPath): VoiceVerificationResult
     {
         try {
+            // Normalize to forward slashes (prevents Errno 22 on Windows)
+            $audioPath = str_replace('\\', '/', $audioPath);
+
             // 1. Normalize Audio
             $wavPath = $this->audioService->ensureValidWav($audioPath);
 
