@@ -86,6 +86,7 @@ class AuthController extends Controller
             // Save User (embedding is already updated on the object by service)
             $user->save();
 
+            cookie()->queue(cookie()->forever('has_logged_in', '1'));
             return redirect()->route('login')->with('status', 'Registrasi berhasil! Silakan login.');
         } catch (\Exception $e) {
             Log::error("Registration failure: " . $e->getMessage());
@@ -110,6 +111,7 @@ class AuthController extends Controller
             return back()->withErrors(['phone' => 'Kredensial salah'])->withInput()->with('mode', 'login');
         }
 
+        cookie()->queue(cookie()->forever('has_logged_in', '1'));
         $request->session()->regenerate();
         return redirect()->intended('dashboard');
     }
@@ -156,6 +158,7 @@ class AuthController extends Controller
             }
 
             Auth::login($user);
+            cookie()->queue(cookie()->forever('has_logged_in', '1'));
             $request->session()->regenerate();
 
             return redirect()->route('dashboard')->with('status', "✅ Login berhasil!");
