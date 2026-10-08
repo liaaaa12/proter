@@ -142,8 +142,8 @@ class AuthController extends Controller
                 'threshold' => $threshold
             ]);
 
-            // Log for analytics
-            VoiceVerificationLogger::log($result);
+            // Log for analytics (nobody is logged in yet, so pass the account being tried)
+            VoiceVerificationLogger::log($result, ['user_id' => $user->id]);
 
             if (!$result->success) {
                 return back()->withErrors(['voice_audio' => 'Error: ' . $result->error])->with('mode', 'login');
