@@ -10,6 +10,12 @@ return new class extends Migration
 {
     private const LOG_TIMEZONE = 'Asia/Jakarta';
 
+    private const NEW_COLUMNS = [
+        'stt_transcript', 'stt_expected', 'stt_similarity',
+        'aasist_spoof', 'aasist_security_level', 'aasist_model',
+        'rejected_layer', 'user_agent',
+    ];
+
     /**
      * Store everything the voice_verification log file records, so attempts can be analysed
      * in the database (e.g. with DBeaver), and keep their times in WIB:
@@ -19,50 +25,86 @@ return new class extends Migration
      * 3. make created_at/updated_at DATETIME, so every client shows the stored WIB wall-clock
      *    time as is (a TIMESTAMP is converted to each session's time zone, e.g. over remote)
      * 4. shift existing rows, written in the app timezone (UTC), to WIB
+     *
+     * Safe to re-run after a partial failure (e.g. on hosting): existing columns are left
+     * alone, and steps 3-4 only run while created_at is still a TIMESTAMP, so times are
+     * never shifted twice.
      */
     public function up(): void
     {
-        Schema::table('voice_verification_logs', function (Blueprint $table) {
+        $missing = fn (string $column) => !Schema::hasColumn('voice_verification_logs', $column);
+        $needsIndex = !Schema::hasIndex('voice_verification_logs', ['aasist_security_level']);
+
+        Schema::table('voice_verification_logs', function (Blueprint $table) use ($missing, $needsIndex) {
             // Layer 1 (Voice Lock challenge): STT
-            $table->text('stt_transcript')->nullable()->after('is_match');
-            $table->text('stt_expected')->nullable()->after('stt_transcript');
-            $table->decimal('stt_similarity', 5, 2)->nullable()->after('stt_expected');
+            if ($missing('stt_transcript')) {
+                $table->text('stt_transcript')->nullable()->after('is_match');
+            }
+            if ($missing('stt_expected')) {
+                $table->text('stt_expected')->nullable()->after('stt_transcript');
+            }
+            if ($missing('stt_similarity')) {
+                $table->decimal('stt_similarity', 5, 2)->nullable()->after('stt_expected');
+            }
 
             // AASIST
-            $table->decimal('aasist_spoof', 5, 2)->nullable()->after('aasist_bonafide');
-            $table->string('aasist_security_level', 20)->nullable()->after('aasist_spoof'); // standard, elevated, blocked
-            $table->string('aasist_model', 64)->nullable()->after('aasist_security_level');  // weights file, e.g. AASIST_voica.pth
+            if ($missing('aasist_spoof')) {
+                $table->decimal('aasist_spoof', 5, 2)->nullable()->after('aasist_bonafide');
+            }
+            if ($missing('aasist_security_level')) {
+                $table->string('aasist_security_level', 20)->nullable()->after('aasist_spoof'); // standard, elevated, blocked
+            }
+            if ($missing('aasist_model')) {
+                $table->string('aasist_model', 64)->nullable()->after('aasist_security_level');  // weights file, e.g. AASIST_voica.pth
+            }
 
             // Rejection and request context
-            $table->unsignedTinyInteger('rejected_layer')->nullable()->after('rejected_reason');
-            $table->string('user_agent', 512)->nullable()->after('ip_address');
+            if ($missing('rejected_layer')) {
+                $table->unsignedTinyInteger('rejected_layer')->nullable()->after('rejected_reason');
+            }
+            if ($missing('user_agent')) {
+                $table->string('user_agent', 512)->nullable()->after('ip_address');
+            }
 
-            $table->index('aasist_security_level');
+            if ($needsIndex) {
+                $table->index('aasist_security_level');
+            }
         });
 
         $this->backfillFromLogFiles();
 
-        Schema::table('voice_verification_logs', function (Blueprint $table) {
-            $table->dateTime('created_at')->nullable()->change();
-            $table->dateTime('updated_at')->nullable()->change();
-        });
+        if (Schema::getColumnType('voice_verification_logs', 'created_at') === 'timestamp') {
+            Schema::table('voice_verification_logs', function (Blueprint $table) {
+                $table->dateTime('created_at')->nullable()->change();
+                $table->dateTime('updated_at')->nullable()->change();
+            });
 
-        $this->shiftTimes($this->offsetMinutes(config('app.timezone'), self::LOG_TIMEZONE));
+            $this->shiftTimes($this->offsetMinutes(config('app.timezone'), self::LOG_TIMEZONE));
+        }
     }
 
     public function down(): void
     {
-        $this->shiftTimes(-$this->offsetMinutes(config('app.timezone'), self::LOG_TIMEZONE));
+        if (Schema::getColumnType('voice_verification_logs', 'created_at') === 'datetime') {
+            $this->shiftTimes(-$this->offsetMinutes(config('app.timezone'), self::LOG_TIMEZONE));
 
-        Schema::table('voice_verification_logs', function (Blueprint $table) {
-            $table->timestamp('created_at')->nullable()->change();
-            $table->timestamp('updated_at')->nullable()->change();
-            $table->dropIndex(['aasist_security_level']);
-            $table->dropColumn([
-                'stt_transcript', 'stt_expected', 'stt_similarity',
-                'aasist_spoof', 'aasist_security_level', 'aasist_model',
-                'rejected_layer', 'user_agent',
-            ]);
+            Schema::table('voice_verification_logs', function (Blueprint $table) {
+                $table->timestamp('created_at')->nullable()->change();
+                $table->timestamp('updated_at')->nullable()->change();
+            });
+        }
+
+        $hasIndex = Schema::hasIndex('voice_verification_logs', ['aasist_security_level']);
+        $present = array_values(array_filter(self::NEW_COLUMNS,
+            fn ($column) => Schema::hasColumn('voice_verification_logs', $column)));
+
+        Schema::table('voice_verification_logs', function (Blueprint $table) use ($hasIndex, $present) {
+            if ($hasIndex) {
+                $table->dropIndex(['aasist_security_level']);
+            }
+            if ($present) {
+                $table->dropColumn($present);
+            }
         });
     }
 
