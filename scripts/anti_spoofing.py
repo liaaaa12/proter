@@ -15,13 +15,30 @@ import torchaudio.transforms as T
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 AASIST_DIR = os.path.join(SCRIPT_DIR, 'aasist')
-MODEL_PATH = os.path.join(AASIST_DIR, 'models', 'weights', 'AASIST.pth')
+WEIGHTS_DIR = os.path.join(AASIST_DIR, 'models', 'weights')
+MODEL_PATH = os.path.join(WEIGHTS_DIR, 'AASIST.pth')  # pretrained on ASVspoof 2019 LA
+
+# Weights to serve. AASIST_voica.pth (fine-tuned by scripts/training/train_aasist.py) is
+# opt-in: set AASIST_WEIGHTS=AASIST_voica.pth (a file in the weights folder, or a full path)
+# before starting the AI server. Without it the pretrained AASIST.pth runs exactly as before.
+DEFAULT_WEIGHTS = 'AASIST.pth'
+ACTIVE_MODEL_PATH = os.path.join(WEIGHTS_DIR, os.environ.get('AASIST_WEIGHTS') or DEFAULT_WEIGHTS)
+
+# AASIST zones for the pretrained model, as verify_secure() in voice_processor_ecapa.py has
+# always used them: bona fide below 8.75% is blocked, from 89% it is "safe", and anything in
+# between is a grey zone that raises the speaker-verification threshold.
+# Fine-tuned checkpoints carry their own cutoffs, because their scores sit on another scale.
+LEGACY_BLOCK_BELOW = 0.0875
+LEGACY_SAFE_FROM = 0.89
 
 # Add AASIST to path
 sys.path.insert(0, AASIST_DIR)
+if SCRIPT_DIR not in sys.path:
+    sys.path.append(SCRIPT_DIR)
 
 # Import AASIST model
 from models.AASIST import Model as AASIST
+import aasist_preprocess
 
 # Device
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -45,17 +62,33 @@ class AntiSpoofingDetector:
         self.device = device
         self.sample_rate = 16000
         self.nb_samp = MODEL_CONFIG["nb_samp"]
+        self.weights_name = os.path.basename(model_path)
         
         # Load AASIST model
         self.model = AASIST(MODEL_CONFIG)
         
         # Load checkpoint (set weights_only=False for PyTorch 2.6+ compatibility with older models)
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
-        self.model.load_state_dict(checkpoint)
+        # Fine-tuned checkpoints are dicts that also carry their zone cutoffs and need the
+        # preprocessing they were trained with; the pretrained AASIST.pth is a bare state_dict.
+        self.fine_tuned = isinstance(checkpoint, dict) and 'state_dict' in checkpoint
+        if self.fine_tuned:
+            self.model.load_state_dict(checkpoint['state_dict'])
+            self.block_below = float(checkpoint['threshold'])
+            self.safe_from = float(checkpoint['safe_threshold'])
+        else:
+            self.model.load_state_dict(checkpoint)
+            self.block_below, self.safe_from = LEGACY_BLOCK_BELOW, LEGACY_SAFE_FROM
+        # Optional overrides, in percent, to try other zone cutoffs without retraining,
+        # e.g. AASIST_BLOCK_BELOW=8.75 and AASIST_SAFE_FROM=89 (the pretrained model's zones)
+        if os.environ.get('AASIST_BLOCK_BELOW'):
+            self.block_below = float(os.environ['AASIST_BLOCK_BELOW']) / 100
+        if os.environ.get('AASIST_SAFE_FROM'):
+            self.safe_from = float(os.environ['AASIST_SAFE_FROM']) / 100
         self.model.to(device)
         self.model.eval()
         
-        print(f"AASIST model loaded on {device}", file=sys.stderr)
+        print(f"AASIST model loaded on {device} ({self.weights_name})", file=sys.stderr)
     
     def _preprocess_audio(self, audio_path: str) -> torch.Tensor:
         """Load and preprocess audio for AASIST using soundfile to avoid torchaudio backend issues"""
@@ -96,6 +129,10 @@ class AntiSpoofingDetector:
         
         # Flatten to 1D
         waveform = waveform.squeeze(0)
+        
+        if self.fine_tuned:
+            # Same silence trim, loudness normalisation and length as in training
+            return torch.from_numpy(aasist_preprocess.preprocess(waveform.numpy()))
         
         # Pad or truncate to fixed length (64600 samples ~ 4 seconds)
         if waveform.shape[0] < self.nb_samp:
@@ -149,16 +186,30 @@ class AntiSpoofingDetector:
             # - Replay from HP: ~37%
             # 
             # 40% blocks replay (37%) but allows legitimate low-quality audio (42%+)
-            BONAFIDE_THRESHOLD = 0.40  # 40%
+            #
+            # Fine-tuned weights: bona fide means "not blocked" by the checkpoint's own cutoff.
+            BONAFIDE_THRESHOLD = self.block_below if self.fine_tuned else 0.40  # 40%
             
             is_bonafide = bonafide_prob > BONAFIDE_THRESHOLD
+            
+            # Zone used by verify_secure() in voice_processor_ecapa.py
+            if bonafide_prob < self.block_below:
+                zone = 'blocked'
+            elif bonafide_prob >= self.safe_from:
+                zone = 'safe'
+            else:
+                zone = 'grey'
             
             return {
                 'is_bonafide': is_bonafide,
                 'bonafide_probability': round(bonafide_prob * 100, 2),
                 'spoof_probability': round(spoof_prob * 100, 2),
                 'confidence': round(max(bonafide_prob, spoof_prob) * 100, 2),
-                'threshold_used': BONAFIDE_THRESHOLD
+                'threshold_used': BONAFIDE_THRESHOLD,
+                'zone': zone,
+                'zone_block_below': round(self.block_below * 100, 4),
+                'zone_safe_from': round(self.safe_from * 100, 4),
+                'weights': self.weights_name
             }
             
         except Exception as e:
@@ -173,7 +224,7 @@ def get_detector():
     global _detector
     if _detector is None:
         print("Loading AASIST anti-spoofing model...", file=sys.stderr)
-        _detector = AntiSpoofingDetector(MODEL_PATH, DEVICE)
+        _detector = AntiSpoofingDetector(ACTIVE_MODEL_PATH, DEVICE)
     return _detector
 
 
@@ -211,8 +262,8 @@ def main():
     
     if command == 'test':
         print(json.dumps({
-            'model_path': MODEL_PATH,
-            'model_exists': os.path.exists(MODEL_PATH),
+            'model_path': ACTIVE_MODEL_PATH,
+            'model_exists': os.path.exists(ACTIVE_MODEL_PATH),
             'device': DEVICE,
             'cuda_available': torch.cuda.is_available()
         }, indent=2))
